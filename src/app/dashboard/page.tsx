@@ -16,7 +16,7 @@ import { UserButton } from "@clerk/nextjs";
 
 export default function DashboardPage() {
   // TODO: Get user data and determine user type
-  const userType: "startup" | "stakeholder" | "admin" = "startup"; // This will come from the database/user profile
+  const userType = "startup" as "startup" | "stakeholder" | "admin"; // This will come from the database/user profile
   const userName = "TechMed Solutions"; // This will come from user data
 
   const renderStartupDashboard = () => (

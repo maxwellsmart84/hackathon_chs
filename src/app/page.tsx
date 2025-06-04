@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Users, Lightbulb, Target, BarChart3, Heart, Network } from "lucide-react";
+import { ArrowRight, Users, Lightbulb, Heart, Network } from "lucide-react";
 import Link from "next/link";
-import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import FeatureShowcase from "@/components/FeatureShowcase";
 
