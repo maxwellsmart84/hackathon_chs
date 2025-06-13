@@ -53,17 +53,11 @@ export default async function HomePage() {
           </p>
           
           {!userId && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="flex justify-center mb-12">
               <SignUpButton mode="modal">
                 <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                  Join as Startup
+                  Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </SignUpButton>
-              <SignUpButton mode="modal">
-                <Button size="lg" variant="outline">
-                  Join as MUSC Stakeholder
-                  <Users className="ml-2 h-5 w-5" />
                 </Button>
               </SignUpButton>
             </div>

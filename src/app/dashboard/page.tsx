@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,15 +13,134 @@ import {
   MessageSquare, 
   Search,
   Filter,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
+import StartupOnboardingForm from "@/components/forms/StartupOnboardingForm";
+
+interface User {
+  id: string;
+  clerkId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  userType: "startup" | "stakeholder" | "admin";
+  profileComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function DashboardPage() {
-  // TODO: Get user data and determine user type
-  const userType = "startup" as "startup" | "stakeholder" | "admin"; // This will come from the database/user profile
-  const userName = "TechMed Solutions"; // This will come from user data
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch('/api/users/me');
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        console.error('Failed to fetch user profile');
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOnboardingSubmit = async (formData: {
+    name: string;
+    description: string;
+    stage: string;
+    focusAreas: string[];
+    productTypes: string[];
+    technologies: string[];
+    regulatoryStatus?: string;
+    needsClinicalTrials: boolean;
+    nihFundingInterest?: string;
+    businessNeeds?: string[];
+    keywords?: string[];
+  }) => {
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/startups/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        await response.json();
+        // Update user state to reflect completed profile
+        setUser(prev => prev ? { ...prev, profileComplete: true } : null);
+        // Optionally redirect or show success message
+        router.refresh(); // Refresh to show dashboard
+      } else {
+        const error = await response.json();
+        console.error('Onboarding submission failed:', error);
+        alert('Failed to complete onboarding. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting onboarding:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">User not found</h1>
+          <p className="text-gray-600">Please try logging in again.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show onboarding form for startups who haven't completed their profile
+  if (user.userType === "startup" && !user.profileComplete) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {submitting && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg flex items-center space-x-3">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span>Completing your onboarding...</span>
+            </div>
+          </div>
+        )}
+        <StartupOnboardingForm onSubmit={handleOnboardingSubmit} />
+      </div>
+    );
+  }
+
+  const userType = user.userType;
+  const userName = `${user.firstName} ${user.lastName}`;
 
   const renderStartupDashboard = () => (
     <div className="space-y-6">
