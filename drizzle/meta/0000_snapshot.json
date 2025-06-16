@@ -1,11 +1,11 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "7d2cfbb8-5588-4464-b926-dcaeef8fd5bb",
+  "id": "1ea5c54c-2f32-400c-a64e-268e2ad2f293",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "analytics": {
-      "name": "analytics",
+    "chs_hack_analytics": {
+      "name": "chs_hack_analytics",
       "columns": {
         "id": {
           "name": "id",
@@ -69,8 +69,8 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "analytics_id": {
-          "name": "analytics_id",
+        "chs_hack_analytics_id": {
+          "name": "chs_hack_analytics_id",
           "columns": [
             "id"
           ]
@@ -79,8 +79,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "connections": {
-      "name": "connections",
+    "chs_hack_connections": {
+      "name": "chs_hack_connections",
       "columns": {
         "id": {
           "name": "id",
@@ -225,8 +225,8 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "connections_id": {
-          "name": "connections_id",
+        "chs_hack_connections_id": {
+          "name": "chs_hack_connections_id",
           "columns": [
             "id"
           ]
@@ -235,8 +235,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "resource_tags": {
-      "name": "resource_tags",
+    "chs_hack_resource_tags": {
+      "name": "chs_hack_resource_tags",
       "columns": {
         "id": {
           "name": "id",
@@ -309,16 +309,16 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "resource_tags_id": {
-          "name": "resource_tags_id",
+        "chs_hack_resource_tags_id": {
+          "name": "chs_hack_resource_tags_id",
           "columns": [
             "id"
           ]
         }
       },
       "uniqueConstraints": {
-        "resource_tags_name_unique": {
-          "name": "resource_tags_name_unique",
+        "chs_hack_resource_tags_name_unique": {
+          "name": "chs_hack_resource_tags_name_unique",
           "columns": [
             "name"
           ]
@@ -326,8 +326,8 @@
       },
       "checkConstraint": {}
     },
-    "stakeholders": {
-      "name": "stakeholders",
+    "chs_hack_stakeholders": {
+      "name": "chs_hack_stakeholders",
       "columns": {
         "id": {
           "name": "id",
@@ -457,8 +457,8 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "stakeholders_id": {
-          "name": "stakeholders_id",
+        "chs_hack_stakeholders_id": {
+          "name": "chs_hack_stakeholders_id",
           "columns": [
             "id"
           ]
@@ -467,8 +467,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "startups": {
-      "name": "startups",
+    "chs_hack_startups": {
+      "name": "chs_hack_startups",
       "columns": {
         "id": {
           "name": "id",
@@ -505,19 +505,71 @@
           "notNull": false,
           "autoincrement": false
         },
-        "focus_area": {
-          "name": "focus_area",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "stage": {
           "name": "stage",
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "focus_areas": {
+          "name": "focus_areas",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "product_types": {
+          "name": "product_types",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "technologies": {
+          "name": "technologies",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "regulatory_status": {
+          "name": "regulatory_status",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "needs_clinical_trials": {
+          "name": "needs_clinical_trials",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "nih_funding_interest": {
+          "name": "nih_funding_interest",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "business_needs": {
+          "name": "business_needs",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "('[]')"
+        },
+        "keywords": {
+          "name": "keywords",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "('[]')"
         },
         "current_goals": {
           "name": "current_goals",
@@ -586,25 +638,25 @@
           ],
           "isUnique": false
         },
-        "focus_area_idx": {
-          "name": "focus_area_idx",
-          "columns": [
-            "focus_area"
-          ],
-          "isUnique": false
-        },
         "stage_idx": {
           "name": "stage_idx",
           "columns": [
             "stage"
           ],
           "isUnique": false
+        },
+        "regulatory_status_idx": {
+          "name": "regulatory_status_idx",
+          "columns": [
+            "regulatory_status"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "startups_id": {
-          "name": "startups_id",
+        "chs_hack_startups_id": {
+          "name": "chs_hack_startups_id",
           "columns": [
             "id"
           ]
@@ -613,8 +665,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "users": {
-      "name": "users",
+    "chs_hack_users": {
+      "name": "chs_hack_users",
       "columns": {
         "id": {
           "name": "id",
@@ -701,16 +753,16 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "users_id": {
-          "name": "users_id",
+        "chs_hack_users_id": {
+          "name": "chs_hack_users_id",
           "columns": [
             "id"
           ]
         }
       },
       "uniqueConstraints": {
-        "users_clerk_id_unique": {
-          "name": "users_clerk_id_unique",
+        "chs_hack_users_clerk_id_unique": {
+          "name": "chs_hack_users_clerk_id_unique",
           "columns": [
             "clerk_id"
           ]

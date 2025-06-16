@@ -1,27 +1,24 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
-import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+import './globals.css';
+import Header from '@/components/layout/Header';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "MUSC Innovation Engine",
-  description: "Connecting MedTech startups with MUSC resources and expertise",
+  title: 'MUSC Innovation Engine',
+  description: 'Connecting MedTech startups with MUSC resources and expertise',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          <div className="min-h-screen bg-background">
-            {children}
-          </div>
+          <Header />
+          <div className="bg-background min-h-screen">{children}</div>
         </body>
       </html>
     </ClerkProvider>

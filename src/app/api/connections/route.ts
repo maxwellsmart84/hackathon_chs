@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { users, connections, startups, stakeholders } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
-import { ConnectionRequestSchema } from "@/lib/validations";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { db } from '@/lib/db';
+import { users, connections, startups, stakeholders } from '@/lib/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
+import { ConnectionRequestSchema } from '@/lib/validations';
 
 export async function GET() {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user to determine their role
@@ -19,19 +19,19 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     let userConnections;
 
-    if (user.userType === "startup") {
+    if (user.userType === 'startup') {
       // Get startup's profile to find their connections
       const startup = await db.query.startups.findFirst({
         where: eq(startups.userId, user.id),
       });
 
       if (!startup) {
-        return NextResponse.json({ error: "Startup profile not found" }, { status: 404 });
+        return NextResponse.json({ error: 'Startup profile not found' }, { status: 404 });
       }
 
       // Get connections where this startup is involved
@@ -63,15 +63,14 @@ export async function GET() {
         .innerJoin(users, eq(stakeholders.userId, users.id))
         .where(eq(connections.startupId, startup.id))
         .orderBy(connections.createdAt);
-
-    } else if (user.userType === "stakeholder") {
+    } else if (user.userType === 'stakeholder') {
       // Get stakeholder's profile to find their connections
       const stakeholder = await db.query.stakeholders.findFirst({
         where: eq(stakeholders.userId, user.id),
       });
 
       if (!stakeholder) {
-        return NextResponse.json({ error: "Stakeholder profile not found" }, { status: 404 });
+        return NextResponse.json({ error: 'Stakeholder profile not found' }, { status: 404 });
       }
 
       // Get connections where this stakeholder is involved
@@ -95,7 +94,7 @@ export async function GET() {
           // Include startup details
           startupName: startups.companyName,
           startupStage: startups.stage,
-          startupFocusArea: startups.focusArea,
+          startupFocusArea: startups.focusAreas,
           startupDescription: startups.description,
           founderName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
           founderEmail: users.email,
@@ -105,24 +104,26 @@ export async function GET() {
         .innerJoin(users, eq(startups.userId, users.id))
         .where(eq(connections.stakeholderId, stakeholder.id))
         .orderBy(connections.createdAt);
-
     } else {
-      return NextResponse.json({ error: "Access denied - admin users cannot view connections" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Access denied - admin users cannot view connections' },
+        { status: 403 }
+      );
     }
 
     return NextResponse.json({ connections: userConnections });
   } catch (error) {
-    console.error("Error fetching connections:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error('Error fetching connections:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user to determine their role
@@ -131,11 +132,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const body = await request.json();
-    
+
     // Validate the connection request data
     const validatedData = ConnectionRequestSchema.parse(body);
 
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!startup || !stakeholder) {
-      return NextResponse.json({ error: "Startup or stakeholder not found" }, { status: 404 });
+      return NextResponse.json({ error: 'Startup or stakeholder not found' }, { status: 404 });
     }
 
     // Check if connection already exists
@@ -161,28 +162,40 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingConnection) {
-      return NextResponse.json({ error: "Connection already exists between these parties" }, { status: 409 });
+      return NextResponse.json(
+        { error: 'Connection already exists between these parties' },
+        { status: 409 }
+      );
     }
 
     // Verify the user has permission to create this connection
-    if (user.userType === "startup") {
+    if (user.userType === 'startup') {
       const userStartup = await db.query.startups.findFirst({
         where: eq(startups.userId, user.id),
       });
-      
+
       if (!userStartup || userStartup.id !== validatedData.startupId) {
-        return NextResponse.json({ error: "Access denied - can only create connections for your own startup" }, { status: 403 });
+        return NextResponse.json(
+          { error: 'Access denied - can only create connections for your own startup' },
+          { status: 403 }
+        );
       }
-    } else if (user.userType === "stakeholder") {
+    } else if (user.userType === 'stakeholder') {
       const userStakeholder = await db.query.stakeholders.findFirst({
         where: eq(stakeholders.userId, user.id),
       });
-      
+
       if (!userStakeholder || userStakeholder.id !== validatedData.stakeholderId) {
-        return NextResponse.json({ error: "Access denied - can only create connections for yourself" }, { status: 403 });
+        return NextResponse.json(
+          { error: 'Access denied - can only create connections for yourself' },
+          { status: 403 }
+        );
       }
     } else {
-      return NextResponse.json({ error: "Access denied - admin users cannot create connections" }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Access denied - admin users cannot create connections' },
+        { status: 403 }
+      );
     }
 
     // Create the connection
@@ -190,7 +203,7 @@ export async function POST(request: NextRequest) {
       id: crypto.randomUUID(),
       startupId: validatedData.startupId,
       stakeholderId: validatedData.stakeholderId,
-      status: "pending",
+      status: 'pending',
       initiatedBy: user.id,
       message: validatedData.message,
       // TODO: Add AI matching score calculation here
@@ -199,19 +212,19 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { message: "Connection request created successfully", connectionId: newConnection.insertId },
+      { message: 'Connection request created successfully', connectionId: newConnection.insertId },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error creating connection:", error);
-    
-    if (error instanceof Error && error.name === "ZodError") {
+    console.error('Error creating connection:', error);
+
+    if (error instanceof Error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: "Validation error", details: error.message },
+        { error: 'Validation error', details: error.message },
         { status: 400 }
       );
     }
-    
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

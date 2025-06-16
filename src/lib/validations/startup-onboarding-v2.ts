@@ -64,10 +64,10 @@ const ProductTypeSchema = z.enum(PRODUCT_TYPE_OPTIONS);
 const TechnologySchema = z.enum(TECHNOLOGY_OPTIONS);
 const BusinessNeedSchema = z.enum(BUSINESS_NEEDS_OPTIONS);
 
-// Main startup onboarding schema
+// Main startup onboarding schema - clean version without type conflicts
 export const StartupOnboardingSchema = z.object({
   // Company Overview Section
-  name: z
+  companyName: z
     .string()
     .min(1, 'Company name is required')
     .max(200, 'Company name must be less than 200 characters')
@@ -104,13 +104,13 @@ export const StartupOnboardingSchema = z.object({
 
   nihFundingInterest: NIHFundingInterestEnum.optional(),
 
-  // Business Support Section
+  // Business Support Section - using default instead of optional
   businessNeeds: z
     .array(BusinessNeedSchema)
     .max(5, 'Please select no more than 5 business needs')
     .default([]),
 
-  // Keywords/Tags Section
+  // Keywords/Tags Section - using default instead of optional
   keywords: z
     .array(
       z
@@ -120,8 +120,7 @@ export const StartupOnboardingSchema = z.object({
         .trim()
     )
     .max(10, 'Maximum 10 keywords allowed')
-    .default([])
-    .transform(keywords => keywords.filter(k => k.length > 0)),
+    .default([]),
 });
 
 // Inferred types
@@ -133,42 +132,3 @@ export type FocusArea = (typeof FOCUS_AREA_OPTIONS)[number];
 export type ProductType = (typeof PRODUCT_TYPE_OPTIONS)[number];
 export type Technology = (typeof TECHNOLOGY_OPTIONS)[number];
 export type BusinessNeed = (typeof BUSINESS_NEEDS_OPTIONS)[number];
-
-// Validation helper functions
-export const validateFormSection = (
-  schema: z.ZodSchema,
-  data: unknown
-): { success: boolean; errors?: z.ZodError } => {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    return { success: false, errors: result.error };
-  }
-  return { success: true };
-};
-
-// Form field validation schemas for individual sections
-export const CompanyOverviewSchema = StartupOnboardingSchema.pick({
-  name: true,
-  description: true,
-  stage: true,
-});
-
-export const FocusAreasTechnologySchema = StartupOnboardingSchema.pick({
-  focusAreas: true,
-  productTypes: true,
-  technologies: true,
-});
-
-export const RegulatoryClinicalSchema = StartupOnboardingSchema.pick({
-  regulatoryStatus: true,
-  needsClinicalTrials: true,
-  nihFundingInterest: true,
-});
-
-export const BusinessSupportSchema = StartupOnboardingSchema.pick({
-  businessNeeds: true,
-});
-
-export const KeywordsSchema = StartupOnboardingSchema.pick({
-  keywords: true,
-});

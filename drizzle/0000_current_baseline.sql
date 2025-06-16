@@ -1,0 +1,2 @@
+-- Current baseline - database already contains all tables
+-- This migration represents the existing state of the database 

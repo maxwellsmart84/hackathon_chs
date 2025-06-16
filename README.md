@@ -9,21 +9,25 @@ The MUSC Innovation Engine bridges the gap between innovative startups and world
 ## ✨ Key Features
 
 ### 🔐 Authentication & User Management
+
 - **Clerk.js Integration**: Secure authentication with role-based access
 - **Multi-User Types**: Support for startups, MUSC stakeholders, and administrators
 - **Profile System**: Detailed profiles for each user type with validation
 
 ### 🎯 Smart Matching System
+
 - **AI-Driven Recommendations**: Algorithm matches startups with relevant MUSC experts
 - **Profile Compatibility**: Matching based on goals, needs, and expertise alignment
 - **Match Scoring**: Quantified compatibility scores for each connection
 
 ### 🔍 Bidirectional Search & Filtering
+
 - **Advanced Filtering**: Filter by specialty, department, stage, funding status
 - **Real-time Search**: Dynamic search across all user profiles
 - **Categorized Browsing**: Organized by focus areas and expertise domains
 
 ### 📊 Admin Dashboard & Analytics
+
 - **Engagement Metrics**: Track user activity and connection success rates
 - **Platform Insights**: Monitor startup needs and resource saturation
 - **Performance Analytics**: Visual dashboards for leadership decision-making
@@ -90,6 +94,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 📱 User Flows
 
 ### Startup Journey
+
 1. **Registration**: Sign up and select "Startup" user type
 2. **Onboarding**: Complete company profile with goals and needs
 3. **Discovery**: Browse recommended MUSC experts and resources
@@ -97,6 +102,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 5. **Collaboration**: Track progress and manage ongoing relationships
 
 ### MUSC Stakeholder Journey
+
 1. **Registration**: Join with MUSC credentials as "Stakeholder"
 2. **Profile Setup**: Define expertise areas and available resources
 3. **Matching**: Review startup requests and recommendations
@@ -104,6 +110,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 5. **Impact Tracking**: Monitor collaboration outcomes
 
 ### Admin Experience
+
 1. **Dashboard**: Real-time platform analytics and metrics
 2. **User Management**: Oversee user registrations and profiles
 3. **Insights**: Track connection success rates and popular focus areas
@@ -114,6 +121,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### Database Schema
 
 #### Core Tables
+
 - **users**: Base user information and Clerk integration
 - **startups**: Startup-specific profile data and goals
 - **stakeholders**: MUSC internal user profiles and expertise
@@ -122,6 +130,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **resource_tags**: Categorization system for expertise/resources
 
 #### Key Relationships
+
 - Users → Startups/Stakeholders (1:1)
 - Startups ↔ Stakeholders (Many:Many via Connections)
 - All tables include audit trails and timestamps
@@ -166,6 +175,7 @@ src/
 ### Validation Schemas
 
 The platform uses comprehensive Zod schemas for:
+
 - User registration and profile validation
 - Form submissions and data integrity
 - API request/response validation
@@ -174,6 +184,7 @@ The platform uses comprehensive Zod schemas for:
 ### Matching Algorithm
 
 The AI-driven matching system considers:
+
 - **Expertise Alignment**: Stakeholder skills vs. startup needs
 - **Focus Area Compatibility**: Medical specialties and startup domains
 - **Resource Availability**: Lab access, funding, regulatory support
@@ -183,18 +194,21 @@ The AI-driven matching system considers:
 ## 📊 Analytics & Metrics
 
 ### Startup Metrics
+
 - Profile completion rates
 - Connection request success rates
 - Time to first meaningful connection
 - Goal achievement tracking
 
 ### Stakeholder Metrics
+
 - Response rates to connection requests
 - Collaboration frequency
 - Expertise utilization
 - Mentorship impact
 
 ### Platform Metrics
+
 - User growth and retention
 - Connection success rates
 - Popular focus areas and expertise
@@ -225,12 +239,14 @@ npm start
 ## 🔮 Future Enhancements
 
 ### Phase 2 Features
+
 - **Advanced AI Matching**: Machine learning-based recommendation improvements
 - **Video Integration**: Virtual meeting scheduling and hosting
 - **Document Sharing**: Secure file sharing and collaboration tools
 - **Event Management**: Innovation events and networking opportunities
 
 ### Phase 3 Features
+
 - **Mobile App**: Native iOS and Android applications
 - **Integration Hub**: Connect with external tools (CRM, calendars, etc.)
 - **Outcome Tracking**: Detailed collaboration outcome measurement
@@ -251,6 +267,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For questions, issues, or feature requests:
+
 - **Email**: innovation-engine@musc.edu
 - **Documentation**: [Internal Wiki](wiki-link)
 - **Issue Tracker**: GitHub Issues
@@ -258,3 +275,30 @@ For questions, issues, or feature requests:
 ---
 
 **Built with ❤️ for MUSC Innovation**
+
+## Database Development (Code-First Approach)
+
+### Making Schema Changes
+
+**ALWAYS follow this order:**
+
+1. **Edit the schema** in `src/lib/db/schema.ts`
+2. **Generate migration**: `npm run db:generate`
+3. **Apply changes**: `npm run db:migrate` (production) or `npm run db:push` (development)
+
+### Development Commands
+
+```bash
+npm run db:generate    # Generate migration from schema changes
+npm run db:migrate     # Apply migrations to database
+npm run db:push        # Apply schema directly (development only)
+npm run db:studio      # Open database GUI
+npm run db:check       # Validate migrations
+```
+
+### ⚠️ Important Rules
+
+- **NEVER** manually edit the database structure
+- **NEVER** write SQL migrations by hand
+- **ALWAYS** start with schema changes in code
+- **COMMIT** both schema changes and generated migrations together

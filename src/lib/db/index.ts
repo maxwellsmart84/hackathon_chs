@@ -1,6 +1,6 @@
-import { drizzle } from "drizzle-orm/planetscale-serverless";
-import { Client } from "@planetscale/database";
-import * as schema from "./schema";
+import { drizzle } from 'drizzle-orm/planetscale-serverless';
+import { Client } from '@planetscale/database';
+import * as schema from './schema';
 
 // Create the connection
 const client = new Client({
@@ -13,4 +13,4 @@ const client = new Client({
 export const db = drizzle(client, { schema });
 
 export type DB = typeof db;
-export * from "./schema"; 
+export * from './schema';

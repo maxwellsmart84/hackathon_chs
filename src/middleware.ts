@@ -1,7 +1,5 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
@@ -9,47 +7,43 @@ const isProtectedRoute = createRouteMatcher([
   '/connections(.*)',
   '/admin(.*)',
   '/onboarding(.*)',
-])
+]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect()
-    
-    // After authentication, ensure user exists in database
-    const { userId, sessionClaims } = await auth()
-    
-    if (userId && sessionClaims) {
-      try {
-        // Check if user exists in our database
-        const existingUser = await db.query.users.findFirst({
-          where: eq(users.clerkId, userId),
-        })
-        
-        if (!existingUser) {
-          // Create user in our database
-          await db.insert(users).values({
-            id: crypto.randomUUID(),
-            clerkId: userId,
-            email: sessionClaims.email as string,
-            firstName: sessionClaims.firstName as string || '',
-            lastName: sessionClaims.lastName as string || '',
-            userType: 'startup', // Default to startup, can be changed later
-            profileComplete: false,
-          })
-        }
-      } catch (error) {
-        console.error('Error creating user in middleware:', error)
-        // Don't block the request, just log the error
+  try {
+    // Redirect authenticated users from root to dashboard
+    if (req.nextUrl.pathname === '/') {
+      const { userId } = await auth();
+      if (userId) {
+        return NextResponse.redirect(new URL('/dashboard', req.url));
       }
     }
+
+    if (isProtectedRoute(req)) {
+      await auth.protect();
+      // Only check for userId, do not call currentUser() here
+      // Optionally, you can set a header or cookie for downstream API routes to handle user creation
+      // But do not attempt DB writes or call currentUser() in middleware
+    }
+  } catch (error) {
+    console.error('Middleware error:', error);
+    // Let the request continue but log the error
+    return NextResponse.next();
   }
-})
+});
 
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     // Always run for API routes
     '/(api|trpc)(.*)',
+    // Explicitly include all dashboard and protected routes
+    '/dashboard/:path*',
+    '/api/dashboard/:path*',
+    '/api/connections/:path*',
+    '/api/users/:path*',
+    '/api/startups/:path*',
+    '/api/stakeholders/:path*',
   ],
-} 
+};

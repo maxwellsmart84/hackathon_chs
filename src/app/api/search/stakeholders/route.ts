@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { users, stakeholders } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
-import { StakeholderSearchSchema } from "@/lib/validations";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { db } from '@/lib/db';
+import { users, stakeholders } from '@/lib/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
+import { StakeholderSearchSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify user exists (can be any authenticated user type)
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Parse search parameters
@@ -128,18 +128,18 @@ export async function GET(request: NextRequest) {
         totalPages,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
-      }
+      },
     });
   } catch (error) {
-    console.error("Error searching stakeholders:", error);
-    
-    if (error instanceof Error && error.name === "ZodError") {
+    console.error('Error searching stakeholders:', error);
+
+    if (error instanceof Error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: "Invalid search parameters", details: error.message },
+        { error: 'Invalid search parameters', details: error.message },
         { status: 400 }
       );
     }
-    
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}
