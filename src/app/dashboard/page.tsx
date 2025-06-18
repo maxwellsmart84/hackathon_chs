@@ -20,8 +20,9 @@ import {
 import Link from 'next/link';
 import Script from 'next/script';
 import StartupOnboardingForm from '@/components/forms/StartupOnboardingForm';
-import { type StartupOnboardingFormData } from '@/lib/db/schema-types';
+import { type StartupOnboardingFormData, type CreateStartup } from '@/lib/db/schema-types';
 import PageHeader from '@/components/layout/PageHeader';
+import NIHResearchSection from '@/components/dashboard/NIHResearchSection';
 
 interface User {
   id: string;
@@ -90,6 +91,7 @@ export default function DashboardPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [startupData, setStartupData] = useState<CreateStartup | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -117,6 +119,15 @@ export default function DashboardPage() {
           if (connectionsResponse.ok) {
             const connectionsData = await connectionsResponse.json();
             setConnections(connectionsData.connections || []);
+          }
+
+          // Fetch startup data for NIH research matching (only for startup users)
+          if (userData.user.userType === 'startup') {
+            const startupResponse = await fetch('/api/startups');
+            if (startupResponse.ok) {
+              const startupProfileData = await startupResponse.json();
+              setStartupData(startupProfileData);
+            }
           }
         }
       } else {
@@ -391,6 +402,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* NIH Research & Collaboration Section */}
+      {startupData && <NIHResearchSection startupData={startupData} />}
     </div>
   );
 
