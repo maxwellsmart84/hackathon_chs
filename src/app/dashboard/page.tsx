@@ -11,7 +11,6 @@ import {
   Clock,
   MessageSquare,
   Search,
-  Filter,
   Plus,
   Loader2,
   Building2,
@@ -21,7 +20,6 @@ import Link from 'next/link';
 import Script from 'next/script';
 import StartupOnboardingForm from '@/components/forms/StartupOnboardingForm';
 import { type StartupOnboardingFormData, type CreateStartup } from '@/lib/db/schema-types';
-import PageHeader from '@/components/layout/PageHeader';
 import NIHResearchSection from '@/components/dashboard/NIHResearchSection';
 
 interface User {
@@ -155,6 +153,8 @@ export default function DashboardPage() {
         await response.json();
         // Update user state to reflect completed profile
         setUser(prev => (prev ? { ...prev, profileComplete: true } : null));
+        // Trigger header refresh
+        window.dispatchEvent(new CustomEvent('user-profile-updated'));
         // Refresh dashboard data
         await fetchDashboardData();
       } else {
@@ -213,11 +213,6 @@ export default function DashboardPage() {
 
   const renderStartupDashboard = () => (
     <div className="space-y-6">
-      <PageHeader
-        title={`Welcome back, ${dashboardStats?.companyName || 'Startup'}`}
-        description={`Manage your ${dashboardStats?.stage || 'startup'} connections and opportunities`}
-        icon={Building2}
-      />
       {/* Quick Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
@@ -410,12 +405,6 @@ export default function DashboardPage() {
 
   const renderStakeholderDashboard = () => (
     <div className="space-y-6">
-      <PageHeader
-        title={`Welcome back, Dr. ${user.lastName}`}
-        description={`${dashboardStats?.title || 'Stakeholder'} • ${dashboardStats?.department || 'Department'}`}
-        icon={UserCheck}
-      />
-
       {/* Stakeholder Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
@@ -616,12 +605,6 @@ export default function DashboardPage() {
 
   const renderAdminDashboard = () => (
     <div className="space-y-6">
-      <PageHeader
-        title="Admin Dashboard"
-        description="Monitor platform performance and user engagement"
-        icon={TrendingUp}
-      />
-
       {/* Platform Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
@@ -724,36 +707,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600">
-                  <span className="text-sm font-bold text-white">MI</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900">MUSC Innovation Engine</span>
-              </Link>
-              <Badge variant="outline" className="capitalize">
-                {userType}
-              </Badge>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-              </Button>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                {userType === 'startup' ? 'Find Experts' : 'Browse Startups'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Dashboard Content */}
