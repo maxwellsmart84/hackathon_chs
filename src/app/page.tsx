@@ -15,11 +15,11 @@ export default async function HomePage() {
       <section className="relative px-4 py-20 text-center">
         <div className="mx-auto max-w-4xl">
           <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl">
-            Connecting <span className="text-green-600">MedTech Innovation</span> with MUSC
+            Connecting <span className="text-green-600">MedTech Innovation</span> with Hackathon
             Excellence
           </h1>
           <p className="mx-auto mb-8 max-w-2xl text-xl text-gray-600">
-            Bridge the gap between groundbreaking startups and MUSC&apos;s world-class medical
+            Bridge the gap between groundbreaking startups and Hackathon&apos;s world-class medical
             expertise. Accelerate healthcare innovation through strategic partnerships.
           </p>
 
@@ -42,7 +42,7 @@ export default async function HomePage() {
               </div>
               <h3 className="mb-2 text-xl font-semibold">Innovation Matching</h3>
               <p className="text-gray-600">
-                Smart algorithms connect startups with the right MUSC experts and resources
+                Smart algorithms connect startups with the right Hackathon experts and resources
               </p>
             </div>
             <div className="text-center">
@@ -87,7 +87,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="mb-4 text-3xl font-bold">Ready to Accelerate Healthcare Innovation?</h2>
           <p className="mb-8 text-xl opacity-90">
-            Join the MUSC Innovation Engine and be part of the future of medical technology
+            Join the Hackathon Innovation Engine and be part of the future of medical technology
           </p>
 
           {userId ? (
@@ -116,7 +116,7 @@ export default async function HomePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-green-600">
                 <Heart className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold">MUSC Innovation Engine</span>
+              <span className="text-xl font-bold">Hackathon Innovation Engine</span>
             </div>
             <p className="mb-8 text-gray-400">
               Bridging innovation and healthcare excellence at the Medical University of South
@@ -124,8 +124,7 @@ export default async function HomePage() {
             </p>
             <div className="border-t border-gray-800 pt-8">
               <p className="text-gray-500">
-                © 2024 Medical University of South Carolina. Built with ❤️ for healthcare
-                innovation.
+                © 2024 Maxwell Krause. Built with ❤️ for healthcare innovation.
               </p>
             </div>
           </div>

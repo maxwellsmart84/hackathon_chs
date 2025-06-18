@@ -21,7 +21,7 @@ export default function FeatureShowcase() {
       icon: Users,
       title: 'Multi-User Profiles',
       description:
-        'Comprehensive profiles for startups and MUSC stakeholders with role-based access',
+        'Comprehensive profiles for startups and Hackathon stakeholders with role-based access',
       tags: ['Onboarding', 'Authentication', 'Clerk.js'],
       status: '✅ Complete',
     },
@@ -36,7 +36,8 @@ export default function FeatureShowcase() {
     {
       icon: Network,
       title: 'Connection System',
-      description: 'Request and manage connections between startups and MUSC internal resources',
+      description:
+        'Request and manage connections between startups and Hackathon internal resources',
       tags: ['Networking', 'Collaboration', 'API'],
       status: '✅ Complete',
     },
@@ -183,7 +184,7 @@ export default function FeatureShowcase() {
               <ol className="list-inside list-decimal space-y-2 text-sm">
                 <li>Sign up with Clerk authentication</li>
                 <li>Complete startup profile onboarding</li>
-                <li>Browse and search MUSC stakeholders</li>
+                <li>Browse and search Hackathon stakeholders</li>
                 <li>Send connection requests</li>
                 <li>Manage collaborations and meetings</li>
                 <li>Track progress and outcomes</li>
@@ -200,7 +201,7 @@ export default function FeatureShowcase() {
             </CardHeader>
             <CardContent>
               <ol className="list-inside list-decimal space-y-2 text-sm">
-                <li>Sign up with MUSC credentials</li>
+                <li>Sign up with Hackathon credentials</li>
                 <li>Complete professional profile</li>
                 <li>Browse startup ecosystem</li>
                 <li>Respond to connection requests</li>

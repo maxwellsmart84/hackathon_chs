@@ -76,7 +76,6 @@ export const StartupProfileSchema = z.object({
   location: z.string().optional(),
 });
 
-// MUSC departments
 export const DepartmentSchema = z.enum([
   'anesthesia',
   'cardiology',

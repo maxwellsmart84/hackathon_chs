@@ -69,7 +69,7 @@ export const startups = mysqlTable(
   })
 );
 
-// Stakeholder profiles (MUSC internal)
+// Stakeholder profiles
 export const stakeholders = mysqlTable(
   'chs_hack_stakeholders',
   {

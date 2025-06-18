@@ -86,7 +86,7 @@ export default function Header() {
   const getHeaderContent = () => {
     if (!user) {
       return {
-        title: 'MUSC Innovation Engine',
+        title: 'Hackathon Innovation Engine',
         subtitle: null,
         icon: Heart,
         iconBg: 'bg-green-600',
@@ -115,14 +115,14 @@ export default function Header() {
       case 'stakeholder':
         return {
           title: `Welcome back, Dr. ${user.lastName}`,
-          subtitle: 'MUSC Stakeholder',
+          subtitle: 'Hackathon Stakeholder',
           icon: UserCheck,
           iconBg: 'bg-green-600',
         };
 
       case 'admin':
         return {
-          title: 'MUSC Innovation Engine',
+          title: 'Hackathon Innovation Engine',
           subtitle: 'Administrator Dashboard',
           icon: Shield,
           iconBg: 'bg-purple-600',
@@ -130,7 +130,7 @@ export default function Header() {
 
       default:
         return {
-          title: 'MUSC Innovation Engine',
+          title: 'Hackathon Innovation Engine',
           subtitle: null,
           icon: Heart,
           iconBg: 'bg-green-600',

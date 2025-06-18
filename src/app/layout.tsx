@@ -8,8 +8,8 @@ import Header from '@/components/layout/Header';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'MUSC Innovation Engine',
-  description: 'Connecting MedTech startups with MUSC resources and expertise',
+  title: 'Hackathon Innovation Engine',
+  description: 'Connecting MedTech startups with Hackathon resources and expertise',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -203,7 +203,7 @@ export default function StartupOnboardingForm({
         description={
           mode === 'edit'
             ? 'Update your startup profile information'
-            : 'Complete your profile to connect with MUSC experts and resources'
+            : 'Complete your profile to connect with Hackathon experts and resources'
         }
         icon={Building2}
       />

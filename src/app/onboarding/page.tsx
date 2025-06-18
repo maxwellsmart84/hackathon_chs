@@ -50,7 +50,7 @@ export default function OnboardingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600">
               <span className="text-sm font-bold text-white">MI</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">MUSC Innovation Engine</span>
+            <span className="text-xl font-bold text-gray-900">Hackathon Innovation Engine</span>
           </div>
           <h1 className="mb-4 text-3xl font-bold text-gray-900">
             Welcome! Let&apos;s get you started
@@ -79,7 +79,7 @@ export default function OnboardingPage() {
                 connections to accelerate growth.
               </p>
               <ul className="mb-6 space-y-2 text-sm text-gray-500">
-                <li>• Access to MUSC experts</li>
+                <li>• Access to Hackathon experts</li>
                 <li>• Research collaboration opportunities</li>
                 <li>• Funding and grant guidance</li>
                 <li>• Regulatory support</li>
@@ -96,15 +96,15 @@ export default function OnboardingPage() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 transition-colors group-hover:bg-green-200">
                 <Users className="h-8 w-8 text-green-600" />
               </div>
-              <CardTitle className="text-xl">MUSC Stakeholder</CardTitle>
+              <CardTitle className="text-xl">Hackathon Stakeholder</CardTitle>
               <Badge variant="secondary" className="mx-auto w-fit">
                 Internal
               </Badge>
             </CardHeader>
             <CardContent className="text-center">
               <p className="mb-6 text-gray-600">
-                I&apos;m a MUSC researcher, clinician, or staff member ready to share expertise and
-                collaborate with startups.
+                I&apos;m a Hackathon researcher, clinician, or staff member ready to share expertise
+                and collaborate with startups.
               </p>
               <ul className="mb-6 space-y-2 text-sm text-gray-500">
                 <li>• Share your expertise</li>
@@ -114,7 +114,7 @@ export default function OnboardingPage() {
               </ul>
               <Link href="/onboarding/stakeholder">
                 <Button className="w-full bg-green-600 hover:bg-green-700">
-                  I&apos;m MUSC Staff
+                  I&apos;m Hackathon Staff
                 </Button>
               </Link>
             </CardContent>

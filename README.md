@@ -1,22 +1,22 @@
-# MUSC Innovation Engine MVP
+# Hackathon Innovation Engine MVP
 
-A web-based platform designed to connect MedTech startups with internal MUSC resources, facilitating commercialization and collaboration opportunities.
+A web-based platform designed to connect MedTech startups with internal resources, facilitating commercialization and collaboration opportunities.
 
 ## 🎯 Overview
 
-The MUSC Innovation Engine bridges the gap between innovative startups and world-class medical resources at the Medical University of South Carolina. Our platform enables meaningful collaborations that accelerate healthcare innovation through strategic connections.
+The Hackathon Innovation Engine bridges the gap between innovative startups and world-class medical resources at the Medical University of South Carolina. Our platform enables meaningful collaborations that accelerate healthcare innovation through strategic connections.
 
 ## ✨ Key Features
 
 ### 🔐 Authentication & User Management
 
 - **Clerk.js Integration**: Secure authentication with role-based access
-- **Multi-User Types**: Support for startups, MUSC stakeholders, and administrators
+- **Multi-User Types**: Support for startups stakeholders, and administrators
 - **Profile System**: Detailed profiles for each user type with validation
 
 ### 🎯 Smart Matching System
 
-- **AI-Driven Recommendations**: Algorithm matches startups with relevant MUSC experts
+- **AI-Driven Recommendations**: Algorithm matches startups with relevant experts
 - **Profile Compatibility**: Matching based on goals, needs, and expertise alignment
 - **Match Scoring**: Quantified compatibility scores for each connection
 
@@ -53,7 +53,7 @@ The MUSC Innovation Engine bridges the gap between innovative startups and world
 
 ```bash
 git clone <repository-url>
-cd musc-innovation-engine
+cd hackathon-innovation-engine
 npm install
 ```
 
@@ -97,13 +97,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 1. **Registration**: Sign up and select "Startup" user type
 2. **Onboarding**: Complete company profile with goals and needs
-3. **Discovery**: Browse recommended MUSC experts and resources
+3. **Discovery**: Browse recommended medical experts and resources
 4. **Connection**: Send connection requests with personalized messages
 5. **Collaboration**: Track progress and manage ongoing relationships
 
-### MUSC Stakeholder Journey
+### User Stakeholder Journey
 
-1. **Registration**: Join with MUSC credentials as "Stakeholder"
+1. **Registration**: Join with user credentials as "Stakeholder"
 2. **Profile Setup**: Define expertise areas and available resources
 3. **Matching**: Review startup requests and recommendations
 4. **Engagement**: Accept connections and provide guidance
@@ -124,7 +124,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - **users**: Base user information and Clerk integration
 - **startups**: Startup-specific profile data and goals
-- **stakeholders**: MUSC internal user profiles and expertise
+- **stakeholders**: User internal user profiles and expertise
 - **connections**: Connection requests and relationship tracking
 - **analytics**: Platform metrics and usage insights
 - **resource_tags**: Categorization system for expertise/resources
@@ -142,7 +142,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ├── auth/           # Clerk webhooks and authentication
 ├── users/          # User profile management
 ├── startups/       # Startup-specific endpoints
-├── stakeholders/   # MUSC stakeholder endpoints
+├── stakeholders/   # User stakeholder endpoints
 ├── connections/    # Connection request handling
 ├── search/         # Search and filtering
 ├── analytics/      # Admin dashboard data
@@ -219,7 +219,6 @@ The AI-driven matching system considers:
 - **Authentication**: Clerk.js handles secure user authentication
 - **Data Protection**: All sensitive data encrypted at rest and in transit
 - **Privacy Controls**: Users control profile visibility and connection preferences
-- **MUSC Compliance**: Adheres to university data protection policies
 
 ## 🚀 Deployment
 
@@ -268,13 +267,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions, issues, or feature requests:
 
-- **Email**: innovation-engine@musc.edu
+- **Email**: max@maxwellk.dev
 - **Documentation**: [Internal Wiki](wiki-link)
 - **Issue Tracker**: GitHub Issues
 
 ---
 
-**Built with ❤️ for MUSC Innovation**
+**Built with ❤️ for Charleston Hacks Innovation Engine**
 
 ## Database Development (Code-First Approach)
 

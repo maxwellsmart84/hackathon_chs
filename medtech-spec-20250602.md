@@ -4,13 +4,13 @@ Here are all the single-step prompts, along with the architectural document and 
 
 ### Architectural Document & Context for AI Assistant
 
-**Project Title:** MUSC Innovation Engine - MedTech Startup Matching System
+**Project Title:** Hackathon Innovation Engine - MedTech Startup Matching System
 
-**Hackathon Goal:** To design and build a system that helps early-stage MedTech startups at MUSC get matched with the right resources. The solution should be intuitive, adaptable, and strengthen coordination within the innovation ecosystem.
+**Hackathon Goal:** To design and build a system that helps early-stage MedTech startups get matched with the right resources. The solution should be intuitive, adaptable, and strengthen coordination within the innovation ecosystem.
 
 **Timeframe:** 3-week hackathon. This implies a strong focus on MVP (Minimum Viable Product), rapid development, and leveraging existing libraries/frameworks rather than building from scratch. Simplicity and deployability are key.
 
-**Core Problem:** Inconsistent access to resources for early-stage MedTech startups at MUSC, relying on informal networks.
+**Core Problem:** Inconsistent access to resources for early-stage MedTech startups relying on informal networks.
 
 **Proposed Solution (MVP Focus):** A web-based "Innovation Engine" that allows users (e.g., program administrators, mentors, investors) to filter and discover MedTech startups, and (crucially) see potential resource matches based on the startup's profile. This will act as a foundational "AI Innovation Concierge Agent" by providing guided recommendations.
 
@@ -62,11 +62,11 @@ Here are all the single-step prompts, along with the architectural document and 
 ### README.md Content (High-Level)
 
 ```markdown
-# MUSC Innovation Engine - MedTech Startup Matching System
+# Hackathon Innovation Engine - MedTech Startup Matching System
 
 ## Project Overview
 
-The "MUSC Innovation Engine" is a web-based platform designed to address the challenge faced by early-stage MedTech startups at MUSC: inconsistent access to vital resources like mentors, funding, and legal support. This system aims to create a more responsive and coordinated support ecosystem by intuitively matching startups with the right resources based on their unique and evolving needs.
+The "Hackathon Innovation Engine" is a web-based platform designed to address the challenge faced by early-stage MedTech startups: inconsistent access to vital resources like mentors, funding, and legal support. This system aims to create a more responsive and coordinated support ecosystem by intuitively matching startups with the right resources based on their unique and evolving needs.
 
 Developed during a 3-week hackathon, this project focuses on delivering a Minimum Viable Product (MVP) that demonstrates core functionalities, including:
 

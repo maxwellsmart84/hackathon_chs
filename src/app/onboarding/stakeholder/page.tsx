@@ -419,7 +419,9 @@ export default function StakeholderOnboardingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-green-600">
               <Users className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">MUSC Stakeholder Onboarding</span>
+            <span className="text-xl font-bold text-gray-900">
+              Hackathon Stakeholder Onboarding
+            </span>
           </div>
           <div className="mb-4 flex items-center justify-center space-x-2">
             <div className={`h-2 w-8 rounded-full ${step >= 1 ? 'bg-green-600' : 'bg-gray-200'}`} />

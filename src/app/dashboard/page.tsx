@@ -636,7 +636,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardStats?.totalStakeholders || 0}</div>
-            <p className="text-muted-foreground text-xs">MUSC experts</p>
+            <p className="text-muted-foreground text-xs">Hackathon experts</p>
           </CardContent>
         </Card>
 
