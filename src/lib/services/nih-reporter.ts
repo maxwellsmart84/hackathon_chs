@@ -437,9 +437,12 @@ export class NIHReporterService {
     additionalCriteria?: Partial<NIHProjectSearchCriteria>,
     limit: number = 50
   ): Promise<NIHProjectSearchResponse> {
+    // Normalize state names to codes for consistency
+    const normalizedStates = states.map(state => normalizeStateName(state.trim()));
+
     return this.searchProjects({
       criteria: {
-        org_states: states,
+        org_states: normalizedStates,
         use_relevance: true,
         ...additionalCriteria,
       },
@@ -517,7 +520,7 @@ export class NIHReporterService {
     };
 
     if (location.states && location.states.length > 0) {
-      criteria.org_states = location.states;
+      criteria.org_states = location.states.map(state => normalizeStateName(state.trim()));
     }
 
     if (location.cities && location.cities.length > 0) {
@@ -600,6 +603,33 @@ export class NIHReporterService {
       limit: Math.min(limit, 500),
     });
   }
+}
+
+// State normalization helper
+function normalizeStateName(state: string): string {
+  const stateMap: Record<string, string> = {
+    SC: 'SC',
+    'South Carolina': 'SC',
+    NC: 'NC',
+    'North Carolina': 'NC',
+    CA: 'CA',
+    California: 'CA',
+    NY: 'NY',
+    'New York': 'NY',
+    TX: 'TX',
+    Texas: 'TX',
+    FL: 'FL',
+    Florida: 'FL',
+    GA: 'GA',
+    Georgia: 'GA',
+    PA: 'PA',
+    Pennsylvania: 'PA',
+    VA: 'VA',
+    Virginia: 'VA',
+    // Add more mappings as needed
+  };
+
+  return stateMap[state] || state;
 }
 
 // Utility functions for data formatting

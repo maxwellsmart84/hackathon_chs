@@ -1,12 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import useNIHResearch, { ProjectSearchType } from '@/lib/hooks/useNIHResearch';
+import useNIHResearch from '@/lib/hooks/useNIHResearch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Search,
   ExternalLink,
@@ -16,6 +23,10 @@ import {
   FileText,
   Loader2,
   RefreshCw,
+  X,
+  Plus,
+  MapPin,
+  Target,
 } from 'lucide-react';
 import { CreateStartup } from '@/lib/db/schema-types';
 
@@ -23,10 +34,79 @@ interface NIHResearchSectionProps {
   startupData?: CreateStartup;
 }
 
+interface SearchTag {
+  id: string;
+  type: 'text' | 'pi' | 'organization' | 'focus' | 'state' | 'city';
+  label: string;
+  value: string;
+}
+
+// US States and Territories for dropdown
+const US_STATES = [
+  { code: 'AL', name: 'Alabama' },
+  { code: 'AK', name: 'Alaska' },
+  { code: 'AZ', name: 'Arizona' },
+  { code: 'AR', name: 'Arkansas' },
+  { code: 'CA', name: 'California' },
+  { code: 'CO', name: 'Colorado' },
+  { code: 'CT', name: 'Connecticut' },
+  { code: 'DE', name: 'Delaware' },
+  { code: 'FL', name: 'Florida' },
+  { code: 'GA', name: 'Georgia' },
+  { code: 'HI', name: 'Hawaii' },
+  { code: 'ID', name: 'Idaho' },
+  { code: 'IL', name: 'Illinois' },
+  { code: 'IN', name: 'Indiana' },
+  { code: 'IA', name: 'Iowa' },
+  { code: 'KS', name: 'Kansas' },
+  { code: 'KY', name: 'Kentucky' },
+  { code: 'LA', name: 'Louisiana' },
+  { code: 'ME', name: 'Maine' },
+  { code: 'MD', name: 'Maryland' },
+  { code: 'MA', name: 'Massachusetts' },
+  { code: 'MI', name: 'Michigan' },
+  { code: 'MN', name: 'Minnesota' },
+  { code: 'MS', name: 'Mississippi' },
+  { code: 'MO', name: 'Missouri' },
+  { code: 'MT', name: 'Montana' },
+  { code: 'NE', name: 'Nebraska' },
+  { code: 'NV', name: 'Nevada' },
+  { code: 'NH', name: 'New Hampshire' },
+  { code: 'NJ', name: 'New Jersey' },
+  { code: 'NM', name: 'New Mexico' },
+  { code: 'NY', name: 'New York' },
+  { code: 'NC', name: 'North Carolina' },
+  { code: 'ND', name: 'North Dakota' },
+  { code: 'OH', name: 'Ohio' },
+  { code: 'OK', name: 'Oklahoma' },
+  { code: 'OR', name: 'Oregon' },
+  { code: 'PA', name: 'Pennsylvania' },
+  { code: 'RI', name: 'Rhode Island' },
+  { code: 'SC', name: 'South Carolina' },
+  { code: 'SD', name: 'South Dakota' },
+  { code: 'TN', name: 'Tennessee' },
+  { code: 'TX', name: 'Texas' },
+  { code: 'UT', name: 'Utah' },
+  { code: 'VT', name: 'Vermont' },
+  { code: 'VA', name: 'Virginia' },
+  { code: 'WA', name: 'Washington' },
+  { code: 'WV', name: 'West Virginia' },
+  { code: 'WI', name: 'Wisconsin' },
+  { code: 'WY', name: 'Wyoming' },
+  { code: 'DC', name: 'District of Columbia' },
+  { code: 'PR', name: 'Puerto Rico' },
+  { code: 'VI', name: 'Virgin Islands' },
+  { code: 'GU', name: 'Guam' },
+  { code: 'AS', name: 'American Samoa' },
+  { code: 'MP', name: 'Northern Mariana Islands' },
+];
+
 export default function NIHResearchSection({ startupData }: NIHResearchSectionProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<ProjectSearchType>('text');
+  const [searchTags, setSearchTags] = useState<SearchTag[]>([]);
+  const [currentInput, setCurrentInput] = useState('');
+  const [currentSearchType, setCurrentSearchType] = useState<SearchTag['type']>('text');
   const [hasAutoSearched, setHasAutoSearched] = useState(false);
+  const [selectedState, setSelectedState] = useState<string>('');
 
   const {
     isLoading,
@@ -103,20 +183,196 @@ export default function NIHResearchSection({ startupData }: NIHResearchSectionPr
     }
   };
 
-  const handleManualSearch = () => {
-    if (!searchQuery.trim() && searchType !== 'recent') {
-      return;
+  const addSearchTag = () => {
+    if (!currentInput.trim()) return;
+
+    const newTag: SearchTag = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: currentSearchType,
+      label: getTagLabel(currentSearchType, currentInput.trim()),
+      value: currentInput.trim(),
+    };
+
+    setSearchTags(prev => [...prev, newTag]);
+    setCurrentInput('');
+  };
+
+  const removeSearchTag = (tagId: string) => {
+    setSearchTags(prev => prev.filter(tag => tag.id !== tagId));
+  };
+
+  const getTagLabel = (type: SearchTag['type'], value: string): string => {
+    const typeLabels = {
+      text: 'Text',
+      pi: 'PI',
+      organization: 'Org',
+      focus: 'Focus',
+      state: 'State',
+      city: 'City',
+    };
+    return `${typeLabels[type]}: ${value}`;
+  };
+
+  const getTagColor = (type: SearchTag['type']): string => {
+    const colors = {
+      text: 'bg-blue-100 text-blue-800',
+      pi: 'bg-green-100 text-green-800',
+      organization: 'bg-purple-100 text-purple-800',
+      focus: 'bg-orange-100 text-orange-800',
+      state: 'bg-red-100 text-red-800',
+      city: 'bg-yellow-100 text-yellow-800',
+    };
+    return colors[type];
+  };
+
+  const getSearchTypeIcon = (type: SearchTag['type']) => {
+    const icons = {
+      text: Search,
+      pi: User,
+      organization: Building2,
+      focus: Target,
+      state: MapPin,
+      city: MapPin,
+    };
+    return icons[type];
+  };
+
+  const buildSearchQuery = () => {
+    if (searchTags.length === 0) {
+      return { searchParams: null, description: 'Show recent NIH projects', searchType: 'recent' };
     }
 
-    searchProjects({
-      type: searchType,
-      query: searchQuery.trim() || undefined,
-      limit: 15,
-    });
+    // Categorize all tags
+    const textTags = searchTags.filter(tag => tag.type === 'text');
+    const piTags = searchTags.filter(tag => tag.type === 'pi');
+    const orgTags = searchTags.filter(tag => tag.type === 'organization');
+    const focusTags = searchTags.filter(tag => tag.type === 'focus');
+    const stateTags = searchTags.filter(tag => tag.type === 'state');
+    const cityTags = searchTags.filter(tag => tag.type === 'city');
+
+    // Build comprehensive search parameters
+    const hasLocation = stateTags.length > 0 || cityTags.length > 0;
+    const hasFocus = focusTags.length > 0;
+    const hasText = textTags.length > 0;
+    const hasPI = piTags.length > 0;
+    const hasOrg = orgTags.length > 0;
+
+    // Determine best search strategy and build query
+    let searchType: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const searchParams: any = { limit: 15 };
+    let description: string;
+
+    if (hasLocation && hasFocus) {
+      // Geographic + Focus: Most specific search
+      searchType = 'location';
+      searchParams.type = 'location';
+
+      // Only include non-empty location parameters
+      if (stateTags.length > 0) {
+        searchParams.states = stateTags.map(tag => tag.value).join(',');
+      }
+      if (cityTags.length > 0) {
+        searchParams.cities = cityTags.map(tag => tag.value).join(',');
+      }
+
+      searchParams.focusArea = focusTags.map(tag => tag.value).join(' ');
+
+      // Add text terms as additional context
+      if (hasText) {
+        searchParams.query = textTags.map(tag => tag.value).join(' ');
+      }
+
+      description = `Search for ${focusTags.map(t => t.value).join(', ')} research in ${[...stateTags, ...cityTags].map(t => t.value).join(', ')}${hasText ? ` related to "${textTags.map(t => t.value).join(', ')}"` : ''}`;
+    } else if (hasFocus && hasText) {
+      // Focus + Text: Research area with specific terms
+      searchType = 'focus';
+      searchParams.type = 'focus';
+      searchParams.query = `${focusTags.map(tag => tag.value).join(' ')} ${textTags.map(tag => tag.value).join(' ')}`;
+
+      description = `Search for ${focusTags.map(t => t.value).join(', ')} research related to "${textTags.map(t => t.value).join(', ')}"`;
+    } else if (hasPI && (hasText || hasFocus)) {
+      // PI + Context: Investigator with research focus
+      searchType = 'pi';
+      searchParams.type = 'pi';
+      searchParams.query = piTags[0].value;
+
+      // Note: PI search doesn't support additional filters in NIH API, but we can mention them
+      const contextTerms = [...textTags, ...focusTags].map(t => t.value);
+      description = `Search for projects by ${piTags.map(t => t.value).join(', ')}${contextTerms.length > 0 ? ` (context: ${contextTerms.join(', ')})` : ''}`;
+    } else if (hasOrg && (hasText || hasFocus)) {
+      // Organization + Context
+      searchType = 'organization';
+      searchParams.type = 'organization';
+      searchParams.query = orgTags[0].value;
+
+      const contextTerms = [...textTags, ...focusTags].map(t => t.value);
+      description = `Search for projects at ${orgTags.map(t => t.value).join(', ')}${contextTerms.length > 0 ? ` (context: ${contextTerms.join(', ')})` : ''}`;
+    } else if (hasLocation) {
+      // Location only
+      searchType = 'location';
+      searchParams.type = 'location';
+
+      // Only include non-empty location parameters
+      if (stateTags.length > 0) {
+        searchParams.states = stateTags.map(tag => tag.value).join(',');
+      }
+      if (cityTags.length > 0) {
+        searchParams.cities = cityTags.map(tag => tag.value).join(',');
+      }
+
+      description = `Search for research in ${[...stateTags, ...cityTags].map(t => t.value).join(', ')}`;
+    } else if (hasFocus) {
+      // Focus only
+      searchType = 'focus';
+      searchParams.type = 'focus';
+      searchParams.query = focusTags.map(tag => tag.value).join(' ');
+
+      description = `Search for ${focusTags.map(t => t.value).join(', ')} research`;
+    } else if (hasPI) {
+      // PI only
+      searchType = 'pi';
+      searchParams.type = 'pi';
+      searchParams.query = piTags[0].value;
+
+      description = `Search for projects by ${piTags.map(t => t.value).join(', ')}`;
+    } else if (hasOrg) {
+      // Organization only
+      searchType = 'organization';
+      searchParams.type = 'organization';
+      searchParams.query = orgTags[0].value;
+
+      description = `Search for projects at ${orgTags.map(t => t.value).join(', ')}`;
+    } else if (hasText) {
+      // Text only
+      searchType = 'text';
+      searchParams.type = 'text';
+      searchParams.query = textTags.map(tag => tag.value).join(' ');
+
+      description = `Search for projects related to "${textTags.map(t => t.value).join(', ')}"`;
+    } else {
+      // Fallback
+      searchType = 'recent';
+      searchParams.type = 'recent';
+      description = 'Show recent NIH projects';
+    }
+
+    return { searchParams, description, searchType };
+  };
+
+  const handleSearch = () => {
+    const { searchParams, searchType } = buildSearchQuery();
+
+    if (searchType === 'recent' || !searchParams) {
+      getRecentProjects(15);
+    } else {
+      searchProjects(searchParams);
+    }
   };
 
   const handleRefreshRecommendations = () => {
     setHasAutoSearched(false);
+    setSearchTags([]);
     clearResults();
     // Will trigger auto-search via useEffect
   };
@@ -140,6 +396,16 @@ export default function NIHResearchSection({ startupData }: NIHResearchSectionPr
     }
 
     return contexts.join(' • ');
+  };
+
+  const addQuickTag = (type: SearchTag['type'], value: string) => {
+    const newTag: SearchTag = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      label: getTagLabel(type, value),
+      value,
+    };
+    setSearchTags(prev => [...prev, newTag]);
   };
 
   return (
@@ -168,7 +434,7 @@ export default function NIHResearchSection({ startupData }: NIHResearchSectionPr
         </Button>
       </div>
 
-      {/* Manual Search */}
+      {/* Modern Search Interface */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -177,43 +443,188 @@ export default function NIHResearchSection({ startupData }: NIHResearchSectionPr
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <select
-              value={searchType}
-              onChange={e => setSearchType(e.target.value as ProjectSearchType)}
-              className="rounded-md border bg-white px-3 py-2 text-sm"
-            >
-              <option value="text">Text Search</option>
-              <option value="pi">Principal Investigator</option>
-              <option value="organization">Organization</option>
-              <option value="focus">Focus Area</option>
-              <option value="recent">Recent Projects</option>
-              <option value="region">Region</option>
-            </select>
+          {/* Search Input with Type Selector */}
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <select
+                value={currentSearchType}
+                onChange={e => setCurrentSearchType(e.target.value as SearchTag['type'])}
+                className="min-w-[120px] rounded-md border bg-white px-3 py-2 text-sm"
+              >
+                <option value="text">Text</option>
+                <option value="focus">Focus Area</option>
+                <option value="pi">Principal Investigator</option>
+                <option value="organization">Organization</option>
+                <option value="state">State</option>
+                <option value="city">City</option>
+              </select>
 
-            <Input
-              placeholder={
-                searchType === 'recent'
-                  ? 'No query needed for recent projects'
-                  : 'Enter search term...'
-              }
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              disabled={searchType === 'recent'}
-              className="flex-1"
-            />
-
-            <Button
-              onClick={handleManualSearch}
-              disabled={isLoading || (!searchQuery.trim() && searchType !== 'recent')}
-              size="sm"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {currentSearchType === 'state' ? (
+                <>
+                  <Select value={selectedState} onValueChange={setSelectedState}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a state..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {US_STATES.map(state => (
+                        <SelectItem key={state.code} value={state.code}>
+                          {state.name} ({state.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={() => {
+                      if (selectedState) {
+                        addQuickTag('state', selectedState);
+                        setSelectedState('');
+                      }
+                    }}
+                    disabled={!selectedState}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </>
               ) : (
-                <Search className="h-4 w-4" />
+                <>
+                  <Input
+                    placeholder={`Enter ${currentSearchType === 'pi' ? 'investigator name' : currentSearchType === 'city' ? 'city name' : currentSearchType}...`}
+                    value={currentInput}
+                    onChange={e => setCurrentInput(e.target.value)}
+                    onKeyPress={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addSearchTag();
+                      }
+                    }}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={addSearchTag}
+                    disabled={!currentInput.trim()}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </>
               )}
+            </div>
+          </div>
+
+          {/* Quick Add Buttons */}
+          {startupData && (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-600">Quick add from your profile:</p>
+              <div className="flex flex-wrap gap-2">
+                {startupData.focusAreas?.slice(0, 3).map((area, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addQuickTag('focus', area)}
+                    className="h-6 text-xs"
+                  >
+                    <Target className="mr-1 h-3 w-3" />
+                    {area}
+                  </Button>
+                ))}
+                {startupData.location && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const locationParts = startupData
+                        .location!.split(',')
+                        .map(part => part.trim());
+                      const potentialState = locationParts[locationParts.length - 1];
+
+                      // Find matching state code from our list
+                      const matchedState = US_STATES.find(
+                        state =>
+                          state.code === potentialState ||
+                          state.name === potentialState ||
+                          state.name.toLowerCase() === potentialState.toLowerCase()
+                      );
+
+                      if (matchedState) {
+                        addQuickTag('state', matchedState.code);
+                      } else {
+                        // If no match, try to guess common abbreviations
+                        const stateCode =
+                          potentialState.length <= 3
+                            ? potentialState.toUpperCase()
+                            : potentialState;
+                        addQuickTag('state', stateCode);
+                      }
+                    }}
+                    className="h-6 text-xs"
+                  >
+                    <MapPin className="mr-1 h-3 w-3" />
+                    {startupData.location}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Search Tags */}
+          {searchTags.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-600">Search criteria:</p>
+              <div className="flex flex-wrap gap-2">
+                {searchTags.map(tag => {
+                  const Icon = getSearchTypeIcon(tag.type);
+                  return (
+                    <div
+                      key={tag.id}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${getTagColor(tag.type)}`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {tag.label}
+                      <button
+                        onClick={() => removeSearchTag(tag.id)}
+                        className="ml-1 rounded-full p-0.5 hover:bg-black/10"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Search Preview */}
+          {searchTags.length > 0 && (
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+              <div className="flex items-start gap-2">
+                <Search className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Search Preview</p>
+                  <p className="mt-1 text-xs text-blue-700">{buildSearchQuery().description}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Search Button */}
+          <div className="flex gap-2">
+            <Button onClick={handleSearch} disabled={isLoading} className="flex-1">
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-2 h-4 w-4" />
+              )}
+              {searchTags.length === 0 ? 'Show Recent Projects' : 'Search Projects'}
             </Button>
+            {searchTags.length > 0 && (
+              <Button variant="outline" onClick={() => setSearchTags([])}>
+                Clear All
+              </Button>
+            )}
           </div>
 
           {error && (

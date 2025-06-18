@@ -55,6 +55,12 @@ export async function GET(request: NextRequest) {
       offset: searchParams.get('offset'),
       minAmount: searchParams.get('minAmount'),
       maxAmount: searchParams.get('maxAmount'),
+      // Geographic parameters
+      states: searchParams.get('states'),
+      cities: searchParams.get('cities'),
+      region: searchParams.get('region'),
+      focusArea: searchParams.get('focusArea'),
+      includeAdjacent: searchParams.get('includeAdjacent'),
     });
     if (!parsed.success) {
       return NextResponse.json(
