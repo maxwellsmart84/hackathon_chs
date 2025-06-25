@@ -76,6 +76,74 @@ export const StartupProfileSchema = z.object({
   location: z.string().optional(),
 });
 
+// Stakeholder types enum
+export const StakeholderTypeSchema = z.enum([
+  'cro',
+  'financier',
+  'consultant',
+  'advisor',
+  'investor',
+  'service_provider',
+  'musc_faculty', // Keep existing MUSC stakeholders
+  'other',
+]);
+
+// Services offered by external stakeholders
+export const ServiceTypeSchema = z.enum([
+  'clinical-trials',
+  'regulatory-consulting',
+  'funding',
+  'business-development',
+  'market-research',
+  'intellectual-property',
+  'manufacturing',
+  'quality-assurance',
+  'software-development',
+  'data-analysis',
+  'marketing',
+  'sales',
+  'legal-services',
+  'accounting',
+  'strategic-planning',
+  'mentorship',
+  'other',
+]);
+
+// Therapeutic areas for external stakeholders
+export const TherapeuticAreaSchema = z.enum([
+  'cardiology',
+  'oncology',
+  'neurology',
+  'orthopedics',
+  'dermatology',
+  'ophthalmology',
+  'endocrinology',
+  'gastroenterology',
+  'infectious-disease',
+  'respiratory',
+  'mental-health',
+  'pediatrics',
+  'geriatrics',
+  'women-health',
+  'rare-diseases',
+  'other',
+]);
+
+// Industries served by external stakeholders
+export const IndustrySchema = z.enum([
+  'medical-devices',
+  'pharmaceuticals',
+  'biotechnology',
+  'digital-health',
+  'diagnostics',
+  'surgical-instruments',
+  'healthcare-it',
+  'telemedicine',
+  'ai-ml-healthcare',
+  'wearables',
+  'other',
+]);
+
 export const DepartmentSchema = z.enum([
   'anesthesia',
   'cardiology',
@@ -148,21 +216,65 @@ export const ResourceTypeSchema = z.enum([
 // Availability status
 export const AvailabilityStatusSchema = z.enum(['available', 'busy', 'unavailable']);
 
-// Stakeholder profile schema
-export const StakeholderProfileSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  department: DepartmentSchema,
+// Base stakeholder profile schema without refinements
+export const BaseStakeholderProfileSchema = z.object({
+  // Common fields
+  stakeholderType: StakeholderTypeSchema,
+  bio: z.string().max(500, 'Bio must be 500 characters or less').optional(),
+
+  // External stakeholder fields
+  organizationName: z.string().min(1, 'Organization name is required').optional(),
+  contactEmail: z.string().email('Please enter a valid email').optional(),
+  website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  location: z.string().optional(),
+  servicesOffered: z.array(ServiceTypeSchema).optional(),
+  therapeuticAreas: z.array(TherapeuticAreaSchema).optional(),
+  industries: z.array(IndustrySchema).optional(),
+  capabilities: z.string().max(1000, 'Capabilities must be 1000 characters or less').optional(),
+
+  // MUSC stakeholder fields (for backward compatibility)
+  title: z.string().optional(),
+  department: DepartmentSchema.optional(),
   specialties: z.array(z.string()).optional(),
-  expertiseAreas: z
-    .array(ExpertiseAreaSchema)
-    .min(1, 'Please specify at least one area of expertise'),
+  expertiseAreas: z.array(ExpertiseAreaSchema).optional(),
   availableResources: z.array(ResourceTypeSchema).optional(),
   collaborationInterests: z.array(z.string()).optional(),
   researchInterests: z.string().optional(),
   availabilityStatus: AvailabilityStatusSchema.default('available'),
   mentorshipInterest: z.boolean().default(false),
-  bio: z.string().max(500, 'Bio must be 500 characters or less').optional(),
 });
+
+// Updated stakeholder profile schema to support both external and MUSC stakeholders
+export const StakeholderProfileSchema = BaseStakeholderProfileSchema.refine(
+  data => {
+    // Require organization name for external stakeholders
+    if (
+      [
+        'cro',
+        'financier',
+        'consultant',
+        'advisor',
+        'investor',
+        'service_provider',
+        'other',
+      ].includes(data.stakeholderType)
+    ) {
+      return data.organizationName && data.organizationName.length > 0;
+    }
+    // Require title and department for MUSC faculty
+    if (data.stakeholderType === 'musc_faculty') {
+      return data.title && data.title.length > 0 && data.department;
+    }
+    return true;
+  },
+  {
+    message: 'Please complete required fields for your stakeholder type',
+    path: ['organizationName'],
+  }
+);
+
+// Partial schema for updates
+export const PartialStakeholderProfileSchema = BaseStakeholderProfileSchema.partial();
 
 // Connection status
 export const ConnectionStatusSchema = z.enum(['pending', 'accepted', 'declined', 'completed']);
@@ -234,3 +346,7 @@ export type FundingStatus = z.infer<typeof FundingStatusSchema>;
 export type AvailabilityStatus = z.infer<typeof AvailabilityStatusSchema>;
 export type ConnectionStatus = z.infer<typeof ConnectionStatusSchema>;
 export type Milestone = z.infer<typeof MilestoneSchema>;
+export type StakeholderType = z.infer<typeof StakeholderTypeSchema>;
+export type ServiceType = z.infer<typeof ServiceTypeSchema>;
+export type TherapeuticArea = z.infer<typeof TherapeuticAreaSchema>;
+export type Industry = z.infer<typeof IndustrySchema>;

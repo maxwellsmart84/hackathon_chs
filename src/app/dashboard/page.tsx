@@ -103,6 +103,12 @@ export default function DashboardPage() {
         const userData = await userResponse.json();
         setUser(userData.user);
 
+        // Redirect stakeholders to their specialized dashboard
+        if (userData.user.userType === 'stakeholder') {
+          window.location.href = '/dashboard/stakeholder';
+          return;
+        }
+
         // Only fetch dashboard stats and connections if profile is complete
         if (userData.user.profileComplete) {
           // Fetch dashboard stats

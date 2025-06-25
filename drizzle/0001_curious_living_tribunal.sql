@@ -1,0 +1,12 @@
+ALTER TABLE `chs_hack_stakeholders` MODIFY COLUMN `title` varchar(200);
+ALTER TABLE `chs_hack_stakeholders` MODIFY COLUMN `department` varchar(200);
+ALTER TABLE `chs_hack_stakeholders` ADD `organization_name` varchar(200);
+ALTER TABLE `chs_hack_stakeholders` ADD `stakeholder_type` varchar(50) NOT NULL;
+ALTER TABLE `chs_hack_stakeholders` ADD `contact_email` varchar(255);
+ALTER TABLE `chs_hack_stakeholders` ADD `website` varchar(500);
+ALTER TABLE `chs_hack_stakeholders` ADD `location` varchar(200);
+ALTER TABLE `chs_hack_stakeholders` ADD `services_offered` json;
+ALTER TABLE `chs_hack_stakeholders` ADD `therapeutic_areas` json;
+ALTER TABLE `chs_hack_stakeholders` ADD `industries` json;
+ALTER TABLE `chs_hack_stakeholders` ADD `capabilities` text;
+CREATE INDEX `stakeholder_type_idx` ON `chs_hack_stakeholders` (`stakeholder_type`);

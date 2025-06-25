@@ -17,21 +17,25 @@ export async function GET() {
       where: eq(users.clerkId, userId),
     });
 
-    // If user does not exist, create them from Clerk
+    // If user does not exist, create them from Clerk (only for startup users)
+    // Stakeholders should be created through the explicit /api/users endpoint
     if (!user) {
       const clerkUser = await currentUser();
       if (!clerkUser) {
         return NextResponse.json({ error: 'Clerk user not found' }, { status: 404 });
       }
+
+      // Only auto-create for startup users, return 404 for others to force explicit creation
       const newUser = {
         id: crypto.randomUUID(),
         clerkId: userId,
         email: clerkUser.emailAddresses[0]?.emailAddress || '',
         firstName: clerkUser.firstName || '',
         lastName: clerkUser.lastName || '',
-        userType: 'startup', // Default to startup, can be changed later
+        userType: 'startup', // Default to startup for auto-creation
         profileComplete: false,
       };
+
       await db.insert(users).values(newUser);
       // Fetch the user again to get all fields (createdAt, updatedAt, etc.)
       user = await db.query.users.findFirst({

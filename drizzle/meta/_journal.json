@@ -8,6 +8,13 @@
       "when": 1750186266192,
       "tag": "0000_current_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1750869584729,
+      "tag": "0001_curious_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

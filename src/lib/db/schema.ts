@@ -75,8 +75,21 @@ export const stakeholders = mysqlTable(
   {
     id: varchar('id', { length: 255 }).primaryKey(),
     userId: varchar('user_id', { length: 255 }).notNull(),
-    title: varchar('title', { length: 200 }).notNull(),
-    department: varchar('department', { length: 200 }).notNull(),
+    // Organization details (for external stakeholders)
+    organizationName: varchar('organization_name', { length: 200 }),
+    stakeholderType: varchar('stakeholder_type', { length: 50 }).notNull(), // 'cro', 'financier', 'consultant', 'musc_faculty', etc.
+    // Contact information
+    contactEmail: varchar('contact_email', { length: 255 }),
+    website: varchar('website', { length: 500 }),
+    location: varchar('location', { length: 200 }),
+    // Services and capabilities (for external stakeholders)
+    servicesOffered: json('services_offered').$type<string[]>(),
+    therapeuticAreas: json('therapeutic_areas').$type<string[]>(),
+    industries: json('industries').$type<string[]>(),
+    capabilities: text('capabilities'),
+    // MUSC-specific fields (kept for backward compatibility)
+    title: varchar('title', { length: 200 }),
+    department: varchar('department', { length: 200 }),
     specialties: json('specialties').$type<string[]>(),
     expertiseAreas: json('expertise_areas').$type<string[]>(),
     availableResources: json('available_resources').$type<string[]>(),
@@ -90,6 +103,7 @@ export const stakeholders = mysqlTable(
   },
   table => ({
     userIdIdx: index('user_id_idx').on(table.userId),
+    stakeholderTypeIdx: index('stakeholder_type_idx').on(table.stakeholderType),
     departmentIdx: index('department_idx').on(table.department),
     availabilityIdx: index('availability_idx').on(table.availabilityStatus),
   })

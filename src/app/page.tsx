@@ -25,10 +25,22 @@ export default async function HomePage() {
 
           {!userId && (
             <div className="mb-12 flex justify-center">
-              <SignUpButton mode="modal">
+              <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding/startup">
                 <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                  Get Started
+                  Get Started as a Startup
                   <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </SignUpButton>
+            </div>
+          )}
+
+          {!userId && (
+            <div className="mb-12 text-center">
+              <p className="mb-4 text-gray-600">Are you a CRO, investor, or consultant?</p>
+              <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding/stakeholder">
+                <Button variant="outline" size="lg">
+                  Join as a Stakeholder
+                  <Users className="ml-2 h-5 w-5" />
                 </Button>
               </SignUpButton>
             </div>

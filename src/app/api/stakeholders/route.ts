@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { users, stakeholders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { StakeholderProfileSchema } from '@/lib/validations';
+import { StakeholderProfileSchema, PartialStakeholderProfileSchema } from '@/lib/validations';
 
 export async function GET() {
   try {
@@ -83,11 +83,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Stakeholder profile already exists' }, { status: 409 });
     }
 
-    // Create stakeholder profile
+    // Create stakeholder profile with the new schema
     const newStakeholder = await db.insert(stakeholders).values({
       id: crypto.randomUUID(),
       userId: user.id,
-      ...validatedData,
+      stakeholderType: validatedData.stakeholderType,
+      organizationName: validatedData.organizationName || null,
+      contactEmail: validatedData.contactEmail || null,
+      website: validatedData.website || null,
+      location: validatedData.location || null,
+      servicesOffered: validatedData.servicesOffered || null,
+      therapeuticAreas: validatedData.therapeuticAreas || null,
+      industries: validatedData.industries || null,
+      capabilities: validatedData.capabilities || null,
+      title: validatedData.title || null,
+      department: validatedData.department || null,
+      specialties: validatedData.specialties || null,
+      expertiseAreas: validatedData.expertiseAreas || null,
+      availableResources: validatedData.availableResources || null,
+      collaborationInterests: validatedData.collaborationInterests || null,
+      researchInterests: validatedData.researchInterests || null,
+      availabilityStatus: validatedData.availabilityStatus,
+      mentorshipInterest: validatedData.mentorshipInterest,
+      bio: validatedData.bio || null,
     });
 
     // Update user profile completion status
@@ -147,13 +165,59 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
 
     // Validate the updated data
-    const validatedData = StakeholderProfileSchema.partial().parse(body);
+    const validatedData = PartialStakeholderProfileSchema.parse(body);
 
-    // Update stakeholder profile
+    // Update stakeholder profile with new schema fields
     await db
       .update(stakeholders)
       .set({
-        ...validatedData,
+        ...(validatedData.stakeholderType && { stakeholderType: validatedData.stakeholderType }),
+        ...(validatedData.organizationName !== undefined && {
+          organizationName: validatedData.organizationName || null,
+        }),
+        ...(validatedData.contactEmail !== undefined && {
+          contactEmail: validatedData.contactEmail || null,
+        }),
+        ...(validatedData.website !== undefined && { website: validatedData.website || null }),
+        ...(validatedData.location !== undefined && { location: validatedData.location || null }),
+        ...(validatedData.servicesOffered !== undefined && {
+          servicesOffered: validatedData.servicesOffered || null,
+        }),
+        ...(validatedData.therapeuticAreas !== undefined && {
+          therapeuticAreas: validatedData.therapeuticAreas || null,
+        }),
+        ...(validatedData.industries !== undefined && {
+          industries: validatedData.industries || null,
+        }),
+        ...(validatedData.capabilities !== undefined && {
+          capabilities: validatedData.capabilities || null,
+        }),
+        ...(validatedData.title !== undefined && { title: validatedData.title || null }),
+        ...(validatedData.department !== undefined && {
+          department: validatedData.department || null,
+        }),
+        ...(validatedData.specialties !== undefined && {
+          specialties: validatedData.specialties || null,
+        }),
+        ...(validatedData.expertiseAreas !== undefined && {
+          expertiseAreas: validatedData.expertiseAreas || null,
+        }),
+        ...(validatedData.availableResources !== undefined && {
+          availableResources: validatedData.availableResources || null,
+        }),
+        ...(validatedData.collaborationInterests !== undefined && {
+          collaborationInterests: validatedData.collaborationInterests || null,
+        }),
+        ...(validatedData.researchInterests !== undefined && {
+          researchInterests: validatedData.researchInterests || null,
+        }),
+        ...(validatedData.availabilityStatus !== undefined && {
+          availabilityStatus: validatedData.availabilityStatus,
+        }),
+        ...(validatedData.mentorshipInterest !== undefined && {
+          mentorshipInterest: validatedData.mentorshipInterest,
+        }),
+        ...(validatedData.bio !== undefined && { bio: validatedData.bio || null }),
         updatedAt: new Date(),
       })
       .where(eq(stakeholders.userId, user.id));
