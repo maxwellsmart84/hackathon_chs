@@ -5,7 +5,7 @@ import { users, stakeholders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { StakeholderProfileSchema, PartialStakeholderProfileSchema } from '@/lib/validations';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user first to verify they exist and are a stakeholder
+    // Get user first to verify they exist
     const user = await db.query.users.findFirst({
       where: eq(users.clerkId, userId),
     });
@@ -22,25 +22,55 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (user.userType !== 'stakeholder') {
-      return NextResponse.json(
-        { error: 'Access denied - not a stakeholder user' },
-        { status: 403 }
-      );
+    // Handle different behaviors based on user type
+    if (user.userType === 'stakeholder') {
+      // Stakeholder accessing their own profile
+      const stakeholder = await db.query.stakeholders.findFirst({
+        where: eq(stakeholders.userId, user.id),
+      });
+
+      if (!stakeholder) {
+        return NextResponse.json({ error: 'Stakeholder profile not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ stakeholder });
+    } else if (user.userType === 'startup') {
+      // Startup accessing list of stakeholders
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get('limit') || '10');
+      const page = parseInt(url.searchParams.get('page') || '1');
+      const offset = (page - 1) * limit;
+
+      // Get all stakeholders for startups to browse
+      const allStakeholders = await db
+        .select({
+          id: stakeholders.id,
+          stakeholderType: stakeholders.stakeholderType,
+          organizationName: stakeholders.organizationName,
+          contactEmail: stakeholders.contactEmail,
+          website: stakeholders.website,
+          location: stakeholders.location,
+          servicesOffered: stakeholders.servicesOffered,
+          therapeuticAreas: stakeholders.therapeuticAreas,
+          industries: stakeholders.industries,
+          capabilities: stakeholders.capabilities,
+          bio: stakeholders.bio,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          createdAt: stakeholders.createdAt,
+        })
+        .from(stakeholders)
+        .innerJoin(users, eq(users.id, stakeholders.userId))
+        .limit(limit)
+        .offset(offset);
+
+      return NextResponse.json({ stakeholders: allStakeholders });
+    } else {
+      return NextResponse.json({ error: 'Access denied - invalid user type' }, { status: 403 });
     }
-
-    // Get stakeholder profile
-    const stakeholder = await db.query.stakeholders.findFirst({
-      where: eq(stakeholders.userId, user.id),
-    });
-
-    if (!stakeholder) {
-      return NextResponse.json({ error: 'Stakeholder profile not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ stakeholder });
   } catch (error) {
-    console.error('Error fetching stakeholder:', error);
+    console.error('Error fetching stakeholder(s):', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

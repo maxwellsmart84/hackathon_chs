@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 
 import './globals.css';
 import Header from '@/components/layout/Header';
+import KnockWrapper from '@/components/layout/KnockWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,8 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          <Header />
-          <div className="bg-background min-h-screen">{children}</div>
+          <KnockWrapper>
+            <Header />
+            <div className="bg-background min-h-screen">{children}</div>
+          </KnockWrapper>
         </body>
       </html>
     </ClerkProvider>

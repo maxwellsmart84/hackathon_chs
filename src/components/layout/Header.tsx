@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import NotificationBell from './NotificationBell';
 
 interface User {
   id: string;
@@ -177,6 +178,7 @@ export default function Header() {
                     </Button>
                   </Link>
                 )}
+                <NotificationBell />
                 <UserButton
                   appearance={{
                     elements: {

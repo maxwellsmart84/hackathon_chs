@@ -15,12 +15,14 @@ import {
   Loader2,
   Building2,
   UserCheck,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 import Script from 'next/script';
 import StartupOnboardingForm from '@/components/forms/StartupOnboardingForm';
 import { type StartupOnboardingFormData, type CreateStartup } from '@/lib/db/schema-types';
 import NIHResearchSection from '@/components/dashboard/NIHResearchSection';
+import ConnectionModal from '@/components/ConnectionModal';
 
 interface User {
   id: string;
@@ -74,22 +76,72 @@ interface Connection {
   followUpCompleted: boolean;
   createdAt: string;
   // For startups - stakeholder info
+  stakeholderId?: string;
   stakeholderName?: string;
+  stakeholderLastName?: string;
   stakeholderTitle?: string;
   stakeholderDepartment?: string;
+  stakeholderOrganization?: string;
+  stakeholderType?: string;
   // For stakeholders - startup info
+  startupId?: string;
   startupName?: string;
   startupStage?: string;
   founderName?: string;
+  founderLastName?: string;
 }
+
+interface Stakeholder {
+  id: string;
+  stakeholderType: string;
+  organizationName?: string;
+  contactEmail?: string;
+  website?: string;
+  location?: string;
+  servicesOffered?: string[];
+  therapeuticAreas?: string[];
+  industries?: string[];
+  capabilities?: string;
+  bio?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  createdAt: string;
+}
+
+// Service types for filtering
+const SERVICE_FILTER_OPTIONS = [
+  { value: 'clinical-trials', label: 'Clinical Trials' },
+  { value: 'regulatory-consulting', label: 'Regulatory Consulting' },
+  { value: 'funding', label: 'Funding' },
+  { value: 'business-development', label: 'Business Development' },
+  { value: 'market-research', label: 'Market Research' },
+  { value: 'intellectual-property', label: 'Intellectual Property' },
+  { value: 'manufacturing', label: 'Manufacturing' },
+  { value: 'quality-assurance', label: 'Quality Assurance' },
+  { value: 'software-development', label: 'Software Development' },
+  { value: 'data-analysis', label: 'Data Analysis' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'legal-services', label: 'Legal Services' },
+  { value: 'accounting', label: 'Accounting' },
+  { value: 'strategic-planning', label: 'Strategic Planning' },
+  { value: 'mentorship', label: 'Mentorship' },
+] as const;
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [selectedServiceFilters, setSelectedServiceFilters] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [startupData, setStartupData] = useState<CreateStartup | null>(null);
+  const [connectionModal, setConnectionModal] = useState<{
+    isOpen: boolean;
+    stakeholder: Stakeholder | null;
+  }>({ isOpen: false, stakeholder: null });
 
   useEffect(() => {
     fetchDashboardData();
@@ -131,6 +183,13 @@ export default function DashboardPage() {
             if (startupResponse.ok) {
               const startupProfileData = await startupResponse.json();
               setStartupData(startupProfileData);
+            }
+
+            // Fetch stakeholders for matching
+            const stakeholdersResponse = await fetch('/api/stakeholders?limit=6');
+            if (stakeholdersResponse.ok) {
+              const stakeholdersData = await stakeholdersResponse.json();
+              setStakeholders(stakeholdersData.stakeholders || []);
             }
           }
         }
@@ -217,6 +276,33 @@ export default function DashboardPage() {
 
   const userType = user.userType;
 
+  // Helper function to check if a connection exists with a stakeholder
+  const getConnectionStatus = (stakeholderId: string) => {
+    return connections.find(connection => connection.stakeholderId === stakeholderId);
+  };
+
+  // Filter stakeholders based on selected service types
+  const filteredStakeholders = stakeholders.filter(stakeholder => {
+    if (selectedServiceFilters.length === 0) return true;
+
+    return selectedServiceFilters.some(filter => stakeholder.servicesOffered?.includes(filter));
+  });
+
+  // Toggle filter selection
+  const toggleServiceFilter = (serviceValue: string) => {
+    setSelectedServiceFilters(prev =>
+      prev.includes(serviceValue) ? prev.filter(s => s !== serviceValue) : [...prev, serviceValue]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSelectedServiceFilters([]);
+  };
+
+  const handleConnect = (stakeholder: Stakeholder) => {
+    setConnectionModal({ isOpen: true, stakeholder });
+  };
+
   const renderStartupDashboard = () => (
     <div className="space-y-6">
       {/* Quick Stats */}
@@ -270,12 +356,52 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Service Type Filters */}
+      {connections.length === 0 && stakeholders.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Filter Stakeholders by Services Needed</CardTitle>
+              {selectedServiceFilters.length > 0 && (
+                <Button size="sm" variant="outline" onClick={clearAllFilters}>
+                  Clear All
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {SERVICE_FILTER_OPTIONS.map(service => (
+                <Badge
+                  key={service.value}
+                  variant={selectedServiceFilters.includes(service.value) ? 'default' : 'outline'}
+                  className="hover:bg-opacity-80 cursor-pointer px-3 py-1 text-sm"
+                  onClick={() => toggleServiceFilter(service.value)}
+                >
+                  {service.label}
+                </Badge>
+              ))}
+            </div>
+            {selectedServiceFilters.length > 0 && (
+              <div className="mt-3 text-sm text-gray-600">
+                Showing stakeholders offering:{' '}
+                {selectedServiceFilters
+                  .map(
+                    filter => SERVICE_FILTER_OPTIONS.find(option => option.value === filter)?.label
+                  )
+                  .join(', ')}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Recent Connections */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Recent Connections</CardTitle>
+              <CardTitle>Available Stakeholders</CardTitle>
               <Button size="sm" variant="outline">
                 <Search className="mr-2 h-4 w-4" />
                 View All
@@ -284,51 +410,97 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {connections.length > 0 ? (
-                connections.slice(0, 3).map(connection => (
-                  <div
-                    key={connection.id}
-                    className="flex items-center space-x-4 rounded-lg border p-4"
-                  >
-                    <div className="rounded-lg bg-blue-100 p-2">
-                      <UserCheck className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">{connection.stakeholderName}</p>
-                      <p className="text-sm text-gray-500">
-                        {connection.stakeholderTitle} • {connection.stakeholderDepartment}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        <Badge
-                          variant={
-                            connection.status === 'accepted'
-                              ? 'default'
-                              : connection.status === 'pending'
-                                ? 'secondary'
-                                : 'outline'
-                          }
-                        >
-                          {connection.status}
-                        </Badge>
-                        {connection.aiMatchScore && (
-                          <Badge variant="outline">{connection.aiMatchScore}% match</Badge>
+              {filteredStakeholders.length > 0 ? (
+                filteredStakeholders.slice(0, 3).map(stakeholder => {
+                  const existingConnection = getConnectionStatus(stakeholder.id);
+                  return (
+                    <div
+                      key={stakeholder.id}
+                      className="flex items-center space-x-4 rounded-lg border p-4"
+                    >
+                      <div className="rounded-lg bg-green-100 p-2">
+                        <Building2 className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium">
+                          {stakeholder.firstName} {stakeholder.lastName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {stakeholder.organizationName} •{' '}
+                          {stakeholder.stakeholderType.replace('_', ' ')}
+                        </p>
+                        <div className="flex items-center space-x-2">
+                          {existingConnection && (
+                            <Badge
+                              variant={
+                                existingConnection.status === 'accepted'
+                                  ? 'default'
+                                  : existingConnection.status === 'pending'
+                                    ? 'secondary'
+                                    : 'outline'
+                              }
+                              className="text-xs"
+                            >
+                              {existingConnection.status}
+                            </Badge>
+                          )}
+                          {stakeholder.servicesOffered &&
+                            stakeholder.servicesOffered.length > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                {stakeholder.servicesOffered[0]}
+                              </Badge>
+                            )}
+                          {stakeholder.servicesOffered &&
+                            stakeholder.servicesOffered.length > 1 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{stakeholder.servicesOffered.length - 1}
+                              </Badge>
+                            )}
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        {stakeholder.website && (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={stakeholder.website} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
                         )}
+                        <Button
+                          size="sm"
+                          onClick={() => handleConnect(stakeholder)}
+                          disabled={!!existingConnection}
+                        >
+                          {existingConnection ? 'Connected' : 'Connect'}
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="py-8 text-center">
                   <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No connections yet</h3>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    {selectedServiceFilters.length > 0
+                      ? 'No stakeholders found with selected services'
+                      : 'No stakeholders available'}
+                  </h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    Start connecting with stakeholders to grow your network.
+                    {selectedServiceFilters.length > 0
+                      ? 'Try adjusting your service filters or clearing them to see more options.'
+                      : 'Check back later as more stakeholders join the platform.'}
                   </p>
                   <div className="mt-6">
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Find Stakeholders
-                    </Button>
+                    {selectedServiceFilters.length > 0 ? (
+                      <Button size="sm" onClick={clearAllFilters}>
+                        Clear Filters
+                      </Button>
+                    ) : (
+                      <Button size="sm">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Find Stakeholders
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
@@ -720,6 +892,34 @@ export default function DashboardPage() {
         {userType === 'stakeholder' && renderStakeholderDashboard()}
         {userType === 'admin' && renderAdminDashboard()}
       </main>
+
+      {/* Connection Modal */}
+      <ConnectionModal
+        isOpen={connectionModal.isOpen}
+        onClose={() => setConnectionModal({ isOpen: false, stakeholder: null })}
+        stakeholder={connectionModal.stakeholder}
+        startupName={dashboardStats?.companyName}
+        onConnectionSuccess={(stakeholderId: string) => {
+          // Add new connection to local state without page refresh
+          const newConnection = {
+            id: crypto.randomUUID(),
+            stakeholderId: stakeholderId,
+            status: 'pending',
+            aiMatchScore: undefined,
+            matchReasons: undefined,
+            meetingScheduled: false,
+            followUpCompleted: false,
+            createdAt: new Date().toISOString(),
+            stakeholderName: connectionModal.stakeholder?.firstName,
+            stakeholderLastName: connectionModal.stakeholder?.lastName,
+            stakeholderTitle: undefined,
+            stakeholderDepartment: undefined,
+            stakeholderOrganization: connectionModal.stakeholder?.organizationName,
+            stakeholderType: connectionModal.stakeholder?.stakeholderType,
+          };
+          setConnections(prev => [...prev, newConnection]);
+        }}
+      />
 
       {/* Botpress Chat Scripts */}
       <Script

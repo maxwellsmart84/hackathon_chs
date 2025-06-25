@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { users, connections, startups, stakeholders } from '@/lib/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
-import { ConnectionRequestSchema } from '@/lib/validations';
+import { connections, users, startups, stakeholders } from '@/lib/db/schema';
+import { eq, and } from 'drizzle-orm';
 
+// GET - Fetch connections for the authenticated user
 export async function GET() {
   try {
     const { userId } = await auth();
@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user to determine their role
+    // Get user to determine their type
     const user = await db.query.users.findFirst({
       where: eq(users.clerkId, userId),
     });
@@ -25,7 +25,7 @@ export async function GET() {
     let userConnections;
 
     if (user.userType === 'startup') {
-      // Get startup's profile to find their connections
+      // Get startup ID
       const startup = await db.query.startups.findFirst({
         where: eq(startups.userId, user.id),
       });
@@ -34,14 +34,11 @@ export async function GET() {
         return NextResponse.json({ error: 'Startup profile not found' }, { status: 404 });
       }
 
-      // Get connections where this startup is involved
+      // Fetch connections where this startup is involved
       userConnections = await db
         .select({
           id: connections.id,
-          startupId: connections.startupId,
-          stakeholderId: connections.stakeholderId,
           status: connections.status,
-          initiatedBy: connections.initiatedBy,
           message: connections.message,
           response: connections.response,
           aiMatchScore: connections.aiMatchScore,
@@ -49,22 +46,22 @@ export async function GET() {
           meetingScheduled: connections.meetingScheduled,
           followUpCompleted: connections.followUpCompleted,
           connectionOutcome: connections.connectionOutcome,
-          feedback: connections.feedback,
           createdAt: connections.createdAt,
-          updatedAt: connections.updatedAt,
-          // Include stakeholder details
-          stakeholderName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+          // Stakeholder info
+          stakeholderId: stakeholders.id,
+          stakeholderName: users.firstName,
+          stakeholderLastName: users.lastName,
           stakeholderTitle: stakeholders.title,
           stakeholderDepartment: stakeholders.department,
-          stakeholderEmail: users.email,
+          stakeholderOrganization: stakeholders.organizationName,
+          stakeholderType: stakeholders.stakeholderType,
         })
         .from(connections)
-        .innerJoin(stakeholders, eq(connections.stakeholderId, stakeholders.id))
-        .innerJoin(users, eq(stakeholders.userId, users.id))
-        .where(eq(connections.startupId, startup.id))
-        .orderBy(connections.createdAt);
+        .innerJoin(stakeholders, eq(stakeholders.id, connections.stakeholderId))
+        .innerJoin(users, eq(users.id, stakeholders.userId))
+        .where(eq(connections.startupId, startup.id));
     } else if (user.userType === 'stakeholder') {
-      // Get stakeholder's profile to find their connections
+      // Get stakeholder ID
       const stakeholder = await db.query.stakeholders.findFirst({
         where: eq(stakeholders.userId, user.id),
       });
@@ -73,14 +70,11 @@ export async function GET() {
         return NextResponse.json({ error: 'Stakeholder profile not found' }, { status: 404 });
       }
 
-      // Get connections where this stakeholder is involved
+      // Fetch connections where this stakeholder is involved
       userConnections = await db
         .select({
           id: connections.id,
-          startupId: connections.startupId,
-          stakeholderId: connections.stakeholderId,
           status: connections.status,
-          initiatedBy: connections.initiatedBy,
           message: connections.message,
           response: connections.response,
           aiMatchScore: connections.aiMatchScore,
@@ -88,27 +82,20 @@ export async function GET() {
           meetingScheduled: connections.meetingScheduled,
           followUpCompleted: connections.followUpCompleted,
           connectionOutcome: connections.connectionOutcome,
-          feedback: connections.feedback,
           createdAt: connections.createdAt,
-          updatedAt: connections.updatedAt,
-          // Include startup details
+          // Startup info
+          startupId: startups.id,
           startupName: startups.companyName,
           startupStage: startups.stage,
-          startupFocusArea: startups.focusAreas,
-          startupDescription: startups.description,
-          founderName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-          founderEmail: users.email,
+          founderName: users.firstName,
+          founderLastName: users.lastName,
         })
         .from(connections)
-        .innerJoin(startups, eq(connections.startupId, startups.id))
-        .innerJoin(users, eq(startups.userId, users.id))
-        .where(eq(connections.stakeholderId, stakeholder.id))
-        .orderBy(connections.createdAt);
+        .innerJoin(startups, eq(startups.id, connections.startupId))
+        .innerJoin(users, eq(users.id, startups.userId))
+        .where(eq(connections.stakeholderId, stakeholder.id));
     } else {
-      return NextResponse.json(
-        { error: 'Access denied - admin users cannot view connections' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Invalid user type' }, { status: 403 });
     }
 
     return NextResponse.json({ connections: userConnections });
@@ -118,7 +105,8 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+// POST - Create a new connection request
+export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
 
@@ -126,105 +114,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user to determine their role
+    const { stakeholderId, message } = await req.json();
+
+    if (!stakeholderId) {
+      return NextResponse.json({ error: 'Stakeholder ID is required' }, { status: 400 });
+    }
+
+    // Get user to verify they're a startup
     const user = await db.query.users.findFirst({
       where: eq(users.clerkId, userId),
     });
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!user || user.userType !== 'startup') {
+      return NextResponse.json(
+        { error: 'Only startups can create connection requests' },
+        { status: 403 }
+      );
     }
 
-    const body = await request.json();
-
-    // Validate the connection request data
-    const validatedData = ConnectionRequestSchema.parse(body);
-
-    // Verify the startup and stakeholder exist
+    // Get startup ID
     const startup = await db.query.startups.findFirst({
-      where: eq(startups.id, validatedData.startupId),
+      where: eq(startups.userId, user.id),
     });
 
-    const stakeholder = await db.query.stakeholders.findFirst({
-      where: eq(stakeholders.id, validatedData.stakeholderId),
-    });
-
-    if (!startup || !stakeholder) {
-      return NextResponse.json({ error: 'Startup or stakeholder not found' }, { status: 404 });
+    if (!startup) {
+      return NextResponse.json({ error: 'Startup profile not found' }, { status: 404 });
     }
 
     // Check if connection already exists
     const existingConnection = await db.query.connections.findFirst({
       where: and(
-        eq(connections.startupId, validatedData.startupId),
-        eq(connections.stakeholderId, validatedData.stakeholderId)
+        eq(connections.startupId, startup.id),
+        eq(connections.stakeholderId, stakeholderId)
       ),
     });
 
     if (existingConnection) {
       return NextResponse.json(
-        { error: 'Connection already exists between these parties' },
+        {
+          error: 'Connection request already exists',
+          connection: existingConnection,
+        },
         { status: 409 }
       );
     }
 
-    // Verify the user has permission to create this connection
-    if (user.userType === 'startup') {
-      const userStartup = await db.query.startups.findFirst({
-        where: eq(startups.userId, user.id),
-      });
-
-      if (!userStartup || userStartup.id !== validatedData.startupId) {
-        return NextResponse.json(
-          { error: 'Access denied - can only create connections for your own startup' },
-          { status: 403 }
-        );
-      }
-    } else if (user.userType === 'stakeholder') {
-      const userStakeholder = await db.query.stakeholders.findFirst({
-        where: eq(stakeholders.userId, user.id),
-      });
-
-      if (!userStakeholder || userStakeholder.id !== validatedData.stakeholderId) {
-        return NextResponse.json(
-          { error: 'Access denied - can only create connections for yourself' },
-          { status: 403 }
-        );
-      }
-    } else {
-      return NextResponse.json(
-        { error: 'Access denied - admin users cannot create connections' },
-        { status: 403 }
-      );
-    }
-
-    // Create the connection
+    // Create new connection
     const newConnection = await db.insert(connections).values({
       id: crypto.randomUUID(),
-      startupId: validatedData.startupId,
-      stakeholderId: validatedData.stakeholderId,
+      startupId: startup.id,
+      stakeholderId: stakeholderId,
       status: 'pending',
       initiatedBy: user.id,
-      message: validatedData.message,
-      // TODO: Add AI matching score calculation here
-      aiMatchScore: null,
-      matchReasons: null,
+      message: message || 'would like to connect with you for potential collaboration',
     });
 
     return NextResponse.json(
-      { message: 'Connection request created successfully', connectionId: newConnection.insertId },
+      {
+        message: 'Connection request created successfully',
+        connectionId: newConnection.insertId,
+      },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating connection:', error);
-
-    if (error instanceof Error && error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.message },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
