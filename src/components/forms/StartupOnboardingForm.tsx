@@ -37,6 +37,8 @@ export const FOCUS_AREA_OPTIONS = [
   'Neurology',
   'Pediatrics',
   'Orthopedics',
+  'Vascular',
+  'Suergery',
   'Other',
 ] as const;
 
@@ -60,11 +62,12 @@ export const TECHNOLOGY_OPTIONS = [
 ] as const;
 
 export const BUSINESS_NEEDS_OPTIONS = [
-  'Reimbursement Strategy',
+  'Funding',
   'IP & Licensing',
   'Academic Collaboration',
   'Tech Transfer',
   'Commercialization Support',
+  'Other',
 ] as const;
 
 interface StartupOnboardingFormProps {
