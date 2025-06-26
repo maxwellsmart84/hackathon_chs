@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { users, startups } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { startupOnboardingFormSchema } from '@/lib/db/schema-types';
+import { identifyStartupWithKnock } from '@/lib/services/knock';
 
 export async function POST(request: NextRequest) {
   try {
@@ -133,6 +134,15 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(users.id, user.id));
     console.log('Profile completion updated');
+
+    // Identify user with Knock after successful profile creation using Clerk ID
+    await identifyStartupWithKnock(
+      userId, // Use Clerk ID for consistency
+      validatedData.firstName,
+      validatedData.lastName,
+      user.email,
+      validatedData.companyName
+    );
 
     const response = {
       message: existingStartup

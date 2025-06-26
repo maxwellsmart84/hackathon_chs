@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import useNIHResearch from '@/lib/hooks/useNIHResearch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -121,15 +121,7 @@ export default function NIHResearchSection({ startupData }: NIHResearchSectionPr
     getRecentProjects,
   } = useNIHResearch();
 
-  // Auto-search based on startup data when component loads
-  useEffect(() => {
-    if (startupData && !hasAutoSearched) {
-      performAutoSearch();
-      setHasAutoSearched(true);
-    }
-  }, [startupData, hasAutoSearched]);
-
-  const performAutoSearch = async () => {
+  const performAutoSearch = useCallback(async () => {
     if (!startupData) return;
 
     // Strategy: Search by focus areas first, then by keywords
@@ -181,7 +173,15 @@ export default function NIHResearchSection({ startupData }: NIHResearchSectionPr
       // Last resort: get recent projects
       await getRecentProjects(10);
     }
-  };
+  }, [startupData, searchByLocation, searchByFocusArea, getRecentProjects]);
+
+  // Auto-search based on startup data when component loads
+  useEffect(() => {
+    if (startupData && !hasAutoSearched) {
+      performAutoSearch();
+      setHasAutoSearched(true);
+    }
+  }, [startupData, hasAutoSearched, performAutoSearch]);
 
   const addSearchTag = () => {
     if (!currentInput.trim()) return;

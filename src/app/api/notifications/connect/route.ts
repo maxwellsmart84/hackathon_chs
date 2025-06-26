@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { stakeholders, users, startups, connections } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { identifyStakeholderWithKnock, identifyStartupWithKnock } from '@/lib/services/knock';
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,12 +40,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Startup profile not found' }, { status: 404 });
     }
 
-    // Fetch stakeholder details to get their organization name
+    // Fetch stakeholder details to get their organization name, email, and Clerk ID
     const stakeholder = await db
       .select({
         organizationName: stakeholders.organizationName,
         firstName: users.firstName,
         lastName: users.lastName,
+        email: users.email,
+        clerkId: users.clerkId, // We need this for Knock notifications
       })
       .from(stakeholders)
       .innerJoin(users, eq(users.id, stakeholders.userId))
@@ -91,6 +94,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Knock API key not configured' }, { status: 500 });
     }
 
+    // First, identify both users with Knock using their Clerk IDs
+    // Identify the stakeholder (recipient)
+    await identifyStakeholderWithKnock(
+      stakeholderData.clerkId,
+      stakeholderData.firstName,
+      stakeholderData.lastName,
+      stakeholderData.email,
+      stakeholderData.organizationName || undefined
+    );
+
+    // Identify the startup user (sender)
+    await identifyStartupWithKnock(
+      userId, // Use Clerk ID
+      user.firstName,
+      user.lastName,
+      user.email,
+      startup.companyName || undefined
+    );
+
     // Send notification via Knock REST API
     const response = await fetch(
       'https://api.knock.app/v1/workflows/startup-connection-request/trigger',
@@ -101,7 +123,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          recipients: [stakeholderId],
+          recipients: [stakeholderData.clerkId], // Use Clerk ID for notification delivery
           data: {
             startupName: startupName || 'A startup',
             message: message || 'wants to connect with you',

@@ -5,6 +5,7 @@ import { users, stakeholders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import { identifyStakeholderWithKnock } from '@/lib/services/knock';
 
 // Schema for the onboarding data (includes user fields)
 const StakeholderOnboardingSchema = z.object({
@@ -122,6 +123,15 @@ export async function POST(request: Request) {
         ...stakeholderData,
       });
     }
+
+    // Identify user with Knock after successful profile creation using Clerk ID
+    await identifyStakeholderWithKnock(
+      userId, // Use Clerk ID for consistency
+      validatedData.firstName,
+      validatedData.lastName,
+      user.email,
+      validatedData.organizationName
+    );
 
     return NextResponse.json({
       message: 'Stakeholder profile saved successfully!',

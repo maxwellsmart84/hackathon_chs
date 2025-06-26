@@ -281,6 +281,29 @@ export default function DashboardPage() {
     return connections.find(connection => connection.stakeholderId === stakeholderId);
   };
 
+  // Helper function to format timestamps
+  const formatConnectionTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
+    // For older dates, show the actual date
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  };
+
   // Filter stakeholders based on selected service types
   const filteredStakeholders = stakeholders.filter(stakeholder => {
     if (selectedServiceFilters.length === 0) return true;
@@ -457,6 +480,11 @@ export default function DashboardPage() {
                               </Badge>
                             )}
                         </div>
+                        {existingConnection && (
+                          <p className="mt-1 text-xs text-gray-400">
+                            Connected {formatConnectionTime(existingConnection.createdAt)}
+                          </p>
+                        )}
                       </div>
                       <div className="flex space-x-2">
                         {stakeholder.website && (

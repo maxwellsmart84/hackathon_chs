@@ -16,17 +16,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Users,
   Building2,
   MapPin,
   Globe,
   Mail,
   Target,
   Loader2,
-  ExternalLink,
   Edit,
   Save,
   X,
+  MessageSquare,
+  CheckCircle,
 } from 'lucide-react';
 import StakeholderOnboardingForm from '@/components/forms/StakeholderOnboardingForm';
 import { type StakeholderOnboardingFormData } from '@/components/forms/StakeholderOnboardingForm';
@@ -61,19 +61,16 @@ interface StakeholderProfile {
   bio?: string;
 }
 
-interface Company {
+interface Connection {
   id: string;
-  companyName: string;
-  description: string;
-  website?: string;
-  stage: string;
-  focusAreas: string[];
-  fundingStatus?: string;
-  teamSize?: number;
-  location?: string;
-  currentGoals?: string[];
-  currentNeeds?: string[];
-  founderFirstName: string;
+  status: 'pending' | 'accepted' | 'declined' | 'completed';
+  message: string;
+  response?: string;
+  createdAt: string;
+  startupId: string;
+  startupName: string;
+  startupStage: string;
+  founderName: string;
   founderLastName: string;
 }
 
@@ -140,12 +137,14 @@ const INDUSTRIES = [
 export default function StakeholderDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<StakeholderProfile | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<StakeholderProfile>>({});
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  const [responseText, setResponseText] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -169,11 +168,11 @@ export default function StakeholderDashboard() {
             setProfileForm(profileData.stakeholder);
           }
 
-          // Fetch companies for matching
-          const companiesResponse = await fetch('/api/companies?limit=6');
-          if (companiesResponse.ok) {
-            const companiesData = await companiesResponse.json();
-            setCompanies(companiesData.companies || []);
+          // Fetch connections instead of companies
+          const connectionsResponse = await fetch('/api/connections');
+          if (connectionsResponse.ok) {
+            const connectionsData = await connectionsResponse.json();
+            setConnections(connectionsData.connections || []);
           }
         }
       } else {
@@ -277,6 +276,68 @@ export default function StakeholderDashboard() {
       ? current.filter(i => i !== industry)
       : [...current, industry];
     setProfileForm({ ...profileForm, industries: updated });
+  };
+
+  const handleConnectionResponse = async (
+    connectionId: string,
+    status: 'accepted' | 'declined'
+  ) => {
+    try {
+      const response = await fetch(`/api/connections/${connectionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status,
+          response: responseText,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(`Connection ${status === 'accepted' ? 'accepted' : 'declined'} successfully`);
+        setRespondingTo(null);
+        setResponseText('');
+        // Refresh connections
+        await fetchData();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update connection');
+      }
+    } catch (error) {
+      console.error('Error updating connection:', error);
+      toast.error('Failed to update connection');
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary">Pending</Badge>;
+      case 'accepted':
+        return <Badge className="bg-green-100 text-green-800">Connected</Badge>;
+      case 'declined':
+        return <Badge variant="destructive">Declined</Badge>;
+      case 'completed':
+        return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   if (loading) {
@@ -578,94 +639,128 @@ export default function StakeholderDashboard() {
             </CardContent>
           </Card>
 
-          {/* Startup Matching Section */}
+          {/* Connection Requests Section */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Startups That May Benefit from Your Services</CardTitle>
+                <CardTitle>Connection Requests from Startups</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Manage incoming connection requests from startups seeking your services
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {companies.map(company => (
-                    <Card key={company.id} className="border">
+                <div className="space-y-4">
+                  {connections.map(connection => (
+                    <Card key={connection.id} className="border">
                       <CardContent className="p-4">
                         <div className="space-y-3">
-                          <div>
-                            <h3 className="font-semibold">{company.companyName}</h3>
-                            <p className="line-clamp-2 text-sm text-gray-600">
-                              {company.description}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center space-x-2">
-                              <Target className="h-4 w-4 text-gray-500" />
-                              <span>{company.stage}</span>
-                            </div>
-                            {company.location && (
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="h-4 w-4 text-gray-500" />
-                                <span>{company.location}</span>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <h3 className="font-semibold">{connection.startupName}</h3>
+                                {getStatusBadge(connection.status)}
                               </div>
-                            )}
+                              <p className="text-sm text-gray-600">
+                                Founded by {connection.founderName} {connection.founderLastName}
+                              </p>
+                              <div className="mt-1 flex items-center space-x-2">
+                                <Target className="h-4 w-4 text-gray-500" />
+                                <span className="text-sm">{connection.startupStage}</span>
+                              </div>
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {formatTimeAgo(connection.createdAt)}
+                            </span>
                           </div>
 
-                          {company.focusAreas && company.focusAreas.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {company.focusAreas.slice(0, 3).map(area => (
-                                <Badge key={area} variant="secondary" className="text-xs">
-                                  {area}
-                                </Badge>
-                              ))}
-                              {company.focusAreas.length > 3 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{company.focusAreas.length - 3}
-                                </Badge>
-                              )}
+                          <div className="rounded-lg bg-gray-50 p-3">
+                            <div className="flex items-start space-x-2">
+                              <MessageSquare className="mt-0.5 h-4 w-4 text-gray-500" />
+                              <div className="flex-1">
+                                <p className="text-sm">{connection.message}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {connection.response && (
+                            <div className="rounded-lg bg-blue-50 p-3">
+                              <div className="flex items-start space-x-2">
+                                <CheckCircle className="mt-0.5 h-4 w-4 text-blue-500" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-blue-900">
+                                    Your response:
+                                  </p>
+                                  <p className="text-sm text-blue-800">{connection.response}</p>
+                                </div>
+                              </div>
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">
-                              {company.founderFirstName} {company.founderLastName}
-                            </span>
-                            <div className="flex space-x-2">
-                              {company.website && (
-                                <Button size="sm" variant="outline" asChild>
-                                  <a
-                                    href={company.website}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                          {connection.status === 'pending' && (
+                            <div className="flex flex-col space-y-3">
+                              {respondingTo === connection.id ? (
+                                <div className="space-y-3">
+                                  <Textarea
+                                    placeholder="Write your response to this startup..."
+                                    value={responseText}
+                                    onChange={e => setResponseText(e.target.value)}
+                                    rows={3}
+                                  />
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      onClick={() =>
+                                        handleConnectionResponse(connection.id, 'accepted')
+                                      }
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      Accept & Connect
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() =>
+                                        handleConnectionResponse(connection.id, 'declined')
+                                      }
+                                    >
+                                      Decline
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        setRespondingTo(null);
+                                        setResponseText('');
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex space-x-2">
+                                  <Button
+                                    onClick={() => setRespondingTo(connection.id)}
+                                    className="bg-green-600 hover:bg-green-700"
                                   >
-                                    <ExternalLink className="h-4 w-4" />
-                                  </a>
-                                </Button>
+                                    Respond
+                                  </Button>
+                                </div>
                               )}
-                              <Button size="sm">Connect</Button>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
 
-                {companies.length === 0 && (
+                {connections.length === 0 && (
                   <div className="py-8 text-center">
                     <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No startups found</h3>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">
+                      No connection requests yet
+                    </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      Complete your profile to see relevant startup matches.
+                      When startups reach out to you, their requests will appear here.
                     </p>
-                  </div>
-                )}
-
-                {companies.length > 0 && (
-                  <div className="mt-6 text-center">
-                    <Button variant="outline">
-                      View All Startups
-                      <Users className="ml-2 h-4 w-4" />
-                    </Button>
                   </div>
                 )}
               </CardContent>
