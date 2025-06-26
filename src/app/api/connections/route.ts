@@ -55,6 +55,11 @@ export async function GET() {
           stakeholderDepartment: stakeholders.department,
           stakeholderOrganization: stakeholders.organizationName,
           stakeholderType: stakeholders.stakeholderType,
+          // Contact information (only for accepted connections)
+          stakeholderEmail: users.email,
+          stakeholderContactEmail: stakeholders.contactEmail,
+          stakeholderWebsite: stakeholders.website,
+          stakeholderLocation: stakeholders.location,
         })
         .from(connections)
         .innerJoin(stakeholders, eq(stakeholders.id, connections.stakeholderId))
@@ -89,6 +94,10 @@ export async function GET() {
           startupStage: startups.stage,
           founderName: users.firstName,
           founderLastName: users.lastName,
+          // Contact information (only for accepted connections)
+          founderEmail: users.email,
+          startupWebsite: startups.website,
+          startupLocation: startups.location,
         })
         .from(connections)
         .innerJoin(startups, eq(startups.id, connections.startupId))

@@ -29,6 +29,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import StakeholderOnboardingForm from '@/components/forms/StakeholderOnboardingForm';
+import MessagingModal from '@/components/MessagingModal';
 import { type StakeholderOnboardingFormData } from '@/components/forms/StakeholderOnboardingForm';
 import { toast } from 'sonner';
 
@@ -72,6 +73,10 @@ interface Connection {
   startupStage: string;
   founderName: string;
   founderLastName: string;
+  // Contact information for accepted connections
+  founderEmail?: string;
+  startupWebsite?: string;
+  startupLocation?: string;
 }
 
 const STAKEHOLDER_TYPES = [
@@ -145,6 +150,15 @@ export default function StakeholderDashboard() {
   const [profileForm, setProfileForm] = useState<Partial<StakeholderProfile>>({});
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [responseText, setResponseText] = useState('');
+  const [messagingModal, setMessagingModal] = useState<{
+    isOpen: boolean;
+    connectionId: string;
+    contactInfo: Connection | null;
+  }>({
+    isOpen: false,
+    connectionId: '',
+    contactInfo: null,
+  });
 
   useEffect(() => {
     fetchData();
@@ -308,6 +322,14 @@ export default function StakeholderDashboard() {
       console.error('Error updating connection:', error);
       toast.error('Failed to update connection');
     }
+  };
+
+  const handleMessage = (connection: Connection) => {
+    setMessagingModal({
+      isOpen: true,
+      connectionId: connection.id,
+      contactInfo: connection,
+    });
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -696,6 +718,54 @@ export default function StakeholderDashboard() {
                             </div>
                           )}
 
+                          {/* Contact Information for Accepted Connections */}
+                          {connection.status === 'accepted' && (
+                            <div className="rounded-lg bg-green-50 p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className="mb-2 text-sm font-medium text-green-900">
+                                    Contact Information
+                                  </h4>
+                                  <div className="space-y-1">
+                                    {connection.founderEmail && (
+                                      <div className="flex items-center space-x-2 text-sm text-green-800">
+                                        <Mail className="h-4 w-4" />
+                                        <span>{connection.founderEmail}</span>
+                                      </div>
+                                    )}
+                                    {connection.startupWebsite && (
+                                      <div className="flex items-center space-x-2 text-sm text-green-800">
+                                        <Globe className="h-4 w-4" />
+                                        <a
+                                          href={connection.startupWebsite}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-green-600 hover:underline"
+                                        >
+                                          {connection.startupWebsite}
+                                        </a>
+                                      </div>
+                                    )}
+                                    {connection.startupLocation && (
+                                      <div className="flex items-center space-x-2 text-sm text-green-800">
+                                        <MapPin className="h-4 w-4" />
+                                        <span>{connection.startupLocation}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleMessage(connection)}
+                                  className="border-green-300 bg-white text-green-700 hover:bg-green-50"
+                                >
+                                  Message
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
                           {connection.status === 'pending' && (
                             <div className="flex flex-col space-y-3">
                               {respondingTo === connection.id ? (
@@ -768,6 +838,32 @@ export default function StakeholderDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Messaging Modal */}
+      <MessagingModal
+        isOpen={messagingModal.isOpen}
+        onClose={() =>
+          setMessagingModal({
+            isOpen: false,
+            connectionId: '',
+            contactInfo: null,
+          })
+        }
+        contactInfo={
+          messagingModal.contactInfo
+            ? {
+                name: `${messagingModal.contactInfo.founderName} ${messagingModal.contactInfo.founderLastName}`,
+                companyName: messagingModal.contactInfo.startupName,
+                stage: messagingModal.contactInfo.startupStage,
+                email: messagingModal.contactInfo.founderEmail,
+                website: messagingModal.contactInfo.startupWebsite,
+                location: messagingModal.contactInfo.startupLocation,
+              }
+            : null
+        }
+        userType="stakeholder"
+        connectionId={messagingModal.connectionId}
+      />
     </div>
   );
 }

@@ -23,6 +23,7 @@ import StartupOnboardingForm from '@/components/forms/StartupOnboardingForm';
 import { type StartupOnboardingFormData, type CreateStartup } from '@/lib/db/schema-types';
 import NIHResearchSection from '@/components/dashboard/NIHResearchSection';
 import ConnectionModal from '@/components/ConnectionModal';
+import MessagingModal from '@/components/MessagingModal';
 
 interface User {
   id: string;
@@ -83,12 +84,19 @@ interface Connection {
   stakeholderDepartment?: string;
   stakeholderOrganization?: string;
   stakeholderType?: string;
+  stakeholderEmail?: string;
+  stakeholderContactEmail?: string;
+  stakeholderWebsite?: string;
+  stakeholderLocation?: string;
   // For stakeholders - startup info
   startupId?: string;
   startupName?: string;
   startupStage?: string;
   founderName?: string;
   founderLastName?: string;
+  founderEmail?: string;
+  startupWebsite?: string;
+  startupLocation?: string;
 }
 
 interface Stakeholder {
@@ -142,6 +150,18 @@ export default function DashboardPage() {
     isOpen: boolean;
     stakeholder: Stakeholder | null;
   }>({ isOpen: false, stakeholder: null });
+
+  const [messagingModal, setMessagingModal] = useState<{
+    isOpen: boolean;
+    connectionId: string;
+    contactInfo: Connection | null;
+    userType: 'startup' | 'stakeholder';
+  }>({
+    isOpen: false,
+    connectionId: '',
+    contactInfo: null,
+    userType: 'startup',
+  });
 
   useEffect(() => {
     fetchDashboardData();
@@ -276,11 +296,6 @@ export default function DashboardPage() {
 
   const userType = user.userType;
 
-  // Helper function to check if a connection exists with a stakeholder
-  const getConnectionStatus = (stakeholderId: string) => {
-    return connections.find(connection => connection.stakeholderId === stakeholderId);
-  };
-
   // Helper function to format timestamps
   const formatConnectionTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -324,6 +339,15 @@ export default function DashboardPage() {
 
   const handleConnect = (stakeholder: Stakeholder) => {
     setConnectionModal({ isOpen: true, stakeholder });
+  };
+
+  const handleMessage = (connection: Connection) => {
+    setMessagingModal({
+      isOpen: true,
+      connectionId: connection.id,
+      contactInfo: connection,
+      userType: userType as 'startup' | 'stakeholder',
+    });
   };
 
   const renderStartupDashboard = () => (
@@ -420,11 +444,13 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Recent Connections */}
+        {/* Active Connections Details */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Available Stakeholders</CardTitle>
+              <CardTitle>
+                {connections.length > 0 ? 'Your Connections' : 'Available Stakeholders'}
+              </CardTitle>
               <Button size="sm" variant="outline">
                 <Search className="mr-2 h-4 w-4" />
                 View All
@@ -433,16 +459,137 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredStakeholders.length > 0 ? (
-                filteredStakeholders.slice(0, 3).map(stakeholder => {
-                  const existingConnection = getConnectionStatus(stakeholder.id);
-                  return (
+              {/* Show existing connections first */}
+              {connections.length > 0 && (
+                <>
+                  <div className="mb-4">
+                    <h3 className="mb-3 text-sm font-medium text-gray-900">Active Connections</h3>
+                    <div className="space-y-3">
+                      {connections
+                        .filter(conn => conn.status === 'accepted')
+                        .slice(0, 2)
+                        .map(connection => (
+                          <div
+                            key={connection.id}
+                            className="flex items-center space-x-4 rounded-lg border border-green-200 bg-green-50 p-4"
+                          >
+                            <div className="rounded-lg bg-green-100 p-2">
+                              <Building2 className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div className="flex-1 space-y-1">
+                              <p className="font-medium">
+                                {connection.stakeholderName} {connection.stakeholderLastName}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {connection.stakeholderOrganization} •{' '}
+                                {connection.stakeholderType?.replace('_', ' ')}
+                              </p>
+                              <div className="flex items-center space-x-2">
+                                <Badge className="bg-green-100 text-xs text-green-800">
+                                  Connected
+                                </Badge>
+                                {connection.aiMatchScore && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {connection.aiMatchScore}% match
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Connected {formatConnectionTime(connection.createdAt)}
+                              </p>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleMessage(connection)}
+                              >
+                                Message
+                              </Button>
+                              <Button size="sm">Schedule</Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* Show pending connections */}
+                  {connections.some(conn => conn.status === 'pending') && (
+                    <div className="mb-4">
+                      <h3 className="mb-3 text-sm font-medium text-gray-900">Pending Requests</h3>
+                      <div className="space-y-3">
+                        {connections
+                          .filter(conn => conn.status === 'pending')
+                          .slice(0, 2)
+                          .map(connection => (
+                            <div
+                              key={connection.id}
+                              className="flex items-center space-x-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4"
+                            >
+                              <div className="rounded-lg bg-yellow-100 p-2">
+                                <Clock className="h-5 w-5 text-yellow-600" />
+                              </div>
+                              <div className="flex-1 space-y-1">
+                                <p className="font-medium">
+                                  {connection.stakeholderName} {connection.stakeholderLastName}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {connection.stakeholderOrganization} •{' '}
+                                  {connection.stakeholderType?.replace('_', ' ')}
+                                </p>
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    Pending
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  Sent {formatConnectionTime(connection.createdAt)}
+                                </p>
+                              </div>
+                              <div className="flex space-x-2">
+                                <Button size="sm" variant="outline" disabled>
+                                  Awaiting Response
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Separator before available stakeholders */}
+                  {filteredStakeholders.filter(
+                    s => !connections.some(c => c.stakeholderId === s.id)
+                  ).length > 0 && (
+                    <div className="my-4">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-300" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="bg-white px-2 text-gray-500">
+                            Available Stakeholders
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Show available stakeholders (excluding those already connected) */}
+              {filteredStakeholders.filter(s => !connections.some(c => c.stakeholderId === s.id))
+                .length > 0 ? (
+                filteredStakeholders
+                  .filter(s => !connections.some(c => c.stakeholderId === s.id))
+                  .slice(0, connections.length > 0 ? 2 : 3)
+                  .map(stakeholder => (
                     <div
                       key={stakeholder.id}
                       className="flex items-center space-x-4 rounded-lg border p-4"
                     >
-                      <div className="rounded-lg bg-green-100 p-2">
-                        <Building2 className="h-5 w-5 text-green-600" />
+                      <div className="rounded-lg bg-blue-100 p-2">
+                        <Building2 className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1 space-y-1">
                         <p className="font-medium">
@@ -453,20 +600,6 @@ export default function DashboardPage() {
                           {stakeholder.stakeholderType.replace('_', ' ')}
                         </p>
                         <div className="flex items-center space-x-2">
-                          {existingConnection && (
-                            <Badge
-                              variant={
-                                existingConnection.status === 'accepted'
-                                  ? 'default'
-                                  : existingConnection.status === 'pending'
-                                    ? 'secondary'
-                                    : 'outline'
-                              }
-                              className="text-xs"
-                            >
-                              {existingConnection.status}
-                            </Badge>
-                          )}
                           {stakeholder.servicesOffered &&
                             stakeholder.servicesOffered.length > 0 && (
                               <Badge variant="secondary" className="text-xs">
@@ -480,11 +613,6 @@ export default function DashboardPage() {
                               </Badge>
                             )}
                         </div>
-                        {existingConnection && (
-                          <p className="mt-1 text-xs text-gray-400">
-                            Connected {formatConnectionTime(existingConnection.createdAt)}
-                          </p>
-                        )}
                       </div>
                       <div className="flex space-x-2">
                         {stakeholder.website && (
@@ -494,18 +622,13 @@ export default function DashboardPage() {
                             </a>
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          onClick={() => handleConnect(stakeholder)}
-                          disabled={!!existingConnection}
-                        >
-                          {existingConnection ? 'Connected' : 'Connect'}
+                        <Button size="sm" onClick={() => handleConnect(stakeholder)}>
+                          Connect
                         </Button>
                       </div>
                     </div>
-                  );
-                })
-              ) : (
+                  ))
+              ) : connections.length === 0 ? (
                 <div className="py-8 text-center">
                   <Users className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">
@@ -530,6 +653,14 @@ export default function DashboardPage() {
                       </Button>
                     )}
                   </div>
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">All connected</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    You&apos;ve connected with all available stakeholders matching your filters.
+                  </p>
                 </div>
               )}
             </div>
@@ -947,6 +1078,48 @@ export default function DashboardPage() {
           };
           setConnections(prev => [...prev, newConnection]);
         }}
+      />
+
+      {/* Messaging Modal */}
+      <MessagingModal
+        isOpen={messagingModal.isOpen}
+        onClose={() =>
+          setMessagingModal({
+            isOpen: false,
+            connectionId: '',
+            contactInfo: null,
+            userType: userType as 'startup' | 'stakeholder',
+          })
+        }
+        contactInfo={
+          messagingModal.contactInfo
+            ? {
+                name: messagingModal.contactInfo.stakeholderName
+                  ? `${messagingModal.contactInfo.stakeholderName} ${messagingModal.contactInfo.stakeholderLastName}`
+                  : `${messagingModal.contactInfo.founderName} ${messagingModal.contactInfo.founderLastName}`,
+                organization:
+                  messagingModal.contactInfo.stakeholderOrganization ||
+                  messagingModal.contactInfo.startupName,
+                email:
+                  messagingModal.contactInfo.stakeholderEmail ||
+                  messagingModal.contactInfo.founderEmail,
+                contactEmail: messagingModal.contactInfo.stakeholderContactEmail,
+                website:
+                  messagingModal.contactInfo.stakeholderWebsite ||
+                  messagingModal.contactInfo.startupWebsite,
+                location:
+                  messagingModal.contactInfo.stakeholderLocation ||
+                  messagingModal.contactInfo.startupLocation,
+                title: messagingModal.contactInfo.stakeholderTitle,
+                department: messagingModal.contactInfo.stakeholderDepartment,
+                stakeholderType: messagingModal.contactInfo.stakeholderType,
+                companyName: messagingModal.contactInfo.startupName,
+                stage: messagingModal.contactInfo.startupStage,
+              }
+            : null
+        }
+        userType={messagingModal.userType}
+        connectionId={messagingModal.connectionId}
       />
 
       {/* Botpress Chat Scripts */}
