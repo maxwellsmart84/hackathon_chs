@@ -1130,7 +1130,7 @@ export default function DashboardPage() {
           // Load the configuration script after the injection script is ready
           const configScript = document.createElement('script');
           configScript.src =
-            'https://files.bpcontent.cloud/2025/06/04/21/20250604214818-NK7TCBZJ.js';
+            'https://files.bpcontent.cloud/2025/06/26/16/20250626164513-UMM7S88D.js';
           configScript.async = true;
           document.head.appendChild(configScript);
         }}
