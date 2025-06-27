@@ -279,15 +279,7 @@ export default function DashboardPage() {
   if (user.userType === 'startup' && !user.profileComplete) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {submitting && (
-          <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-            <div className="flex items-center space-x-3 rounded-lg bg-white p-6">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span>Completing your onboarding...</span>
-            </div>
-          </div>
-        )}
-        <StartupOnboardingForm onSubmit={handleOnboardingSubmit} />
+        <StartupOnboardingForm onSubmit={handleOnboardingSubmit} isSubmitting={submitting} />
       </div>
     );
   }

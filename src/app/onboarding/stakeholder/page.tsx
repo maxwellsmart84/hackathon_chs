@@ -6,11 +6,13 @@ import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
 import StakeholderOnboardingForm from '@/components/forms/StakeholderOnboardingForm';
 import { type StakeholderOnboardingFormData } from '@/components/forms/StakeholderOnboardingForm';
+import LoadingOverlay from '@/components/ui/loading-overlay';
 
 export default function StakeholderOnboardingPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [userData, setUserData] = useState<{
     firstName?: string;
     lastName?: string;
@@ -25,6 +27,7 @@ export default function StakeholderOnboardingPage() {
 
       if (metadata.onboardingComplete && metadata.userType === 'stakeholder') {
         // User has already completed stakeholder onboarding, redirect to dashboard
+        setIsInitialLoading(false);
         router.push('/dashboard/stakeholder');
         return;
       }
@@ -32,6 +35,7 @@ export default function StakeholderOnboardingPage() {
       // If user has completed onboarding for a different type, show error
       if (metadata.onboardingComplete && metadata.userType !== 'stakeholder') {
         toast.error('You have already completed onboarding as a ' + metadata.userType);
+        setIsInitialLoading(false);
         router.push('/dashboard');
         return;
       }
@@ -42,12 +46,15 @@ export default function StakeholderOnboardingPage() {
         lastName: user.lastName || '',
         userId: user.id,
       });
+
+      setIsInitialLoading(false);
     }
   }, [isLoaded, user, router]);
 
   const handleSubmit = async (data: StakeholderOnboardingFormData) => {
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
+
       console.log('Submitting stakeholder onboarding data:', data);
 
       const response = await fetch('/api/stakeholders/onboarding', {
@@ -58,65 +65,67 @@ export default function StakeholderOnboardingPage() {
         body: JSON.stringify(data),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
+      const result = await response.json();
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('Error response text:', errorText);
-
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (parseError) {
-          console.error('Failed to parse error response as JSON:', parseError);
-          throw new Error(`Server error (${response.status}): ${errorText || 'Unknown error'}`);
-        }
-
-        throw new Error(errorData.error || `Server error (${response.status})`);
+        throw new Error(result.error || 'Failed to save stakeholder profile');
       }
 
-      const result = await response.json();
-      console.log('Success response:', result);
+      toast.success('Stakeholder profile saved successfully!', {
+        description: 'Welcome to the MUSC Innovation Engine',
+      });
 
-      toast.success(result.message || 'Stakeholder profile saved successfully!');
-
-      // Force refresh user to get updated metadata
-      await user?.reload();
-
+      // Redirect to stakeholder dashboard after successful submission
       router.push('/dashboard/stakeholder');
     } catch (error) {
-      console.error('Onboarding submission failed:', error);
-
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        console.error('Unknown error type:', typeof error, error);
-        toast.error('Failed to save stakeholder profile - unknown error');
-      }
+      console.error('Error submitting stakeholder onboarding:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to save stakeholder profile. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isLoaded) {
+  // Show loading overlay while checking auth status or during submission
+  if (isInitialLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
+      <LoadingOverlay
+        isVisible={true}
+        message="Preparing your stakeholder onboarding..."
+        submessage="Setting up your profile and collaboration preferences"
+      />
     );
   }
 
-  if (!user) {
-    router.push('/sign-in');
-    return null;
+  // Don't render form until we have user data
+  if (!userData) {
+    return (
+      <LoadingOverlay
+        isVisible={true}
+        message="Loading your account..."
+        submessage="Just a moment while we fetch your details"
+      />
+    );
   }
 
   return (
-    <StakeholderOnboardingForm
-      onSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
-      initialUserData={userData || undefined}
-    />
+    <>
+      <LoadingOverlay
+        isVisible={isSubmitting}
+        message="Saving your stakeholder profile..."
+        submessage="Creating your account and setting up collaboration opportunities"
+      />
+
+      <div className="container mx-auto max-w-4xl py-8">
+        <StakeholderOnboardingForm
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          initialUserData={userData}
+        />
+      </div>
+    </>
   );
 }

@@ -1,13 +1,18 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Users, Lightbulb, Heart, Network } from 'lucide-react';
-import Link from 'next/link';
 import { SignUpButton } from '@clerk/nextjs';
+import { redirect } from 'next/navigation';
 
 import { auth } from '@clerk/nextjs/server';
 import FeatureShowcase from '@/components/FeatureShowcase';
 
 export default async function HomePage() {
   const { userId } = await auth();
+
+  // Redirect authenticated users to dashboard
+  if (userId) {
+    redirect('/dashboard');
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
@@ -23,36 +28,32 @@ export default async function HomePage() {
             expertise. Accelerate healthcare innovation through strategic partnerships.
           </p>
 
-          {!userId && (
-            <div className="mb-12 flex justify-center">
-              <SignUpButton
-                mode="modal"
-                forceRedirectUrl="/onboarding/startup"
-                signInForceRedirectUrl="/onboarding/startup"
-              >
-                <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                  Get Started as a Startup
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </SignUpButton>
-            </div>
-          )}
+          <div className="mb-12 flex justify-center">
+            <SignUpButton
+              mode="modal"
+              forceRedirectUrl="/onboarding/startup"
+              signInForceRedirectUrl="/onboarding/startup"
+            >
+              <Button size="lg" className="bg-green-600 hover:bg-green-700">
+                Get Started as a Startup
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </SignUpButton>
+          </div>
 
-          {!userId && (
-            <div className="mb-12 text-center">
-              <p className="mb-4 text-gray-600">Are you a CRO, investor, or consultant?</p>
-              <SignUpButton
-                mode="modal"
-                forceRedirectUrl="/onboarding/stakeholder"
-                signInForceRedirectUrl="/onboarding/stakeholder"
-              >
-                <Button variant="outline" size="lg">
-                  Join as a Stakeholder
-                  <Users className="ml-2 h-5 w-5" />
-                </Button>
-              </SignUpButton>
-            </div>
-          )}
+          <div className="mb-12 text-center">
+            <p className="mb-4 text-gray-600">Are you a CRO, investor, or consultant?</p>
+            <SignUpButton
+              mode="modal"
+              forceRedirectUrl="/onboarding/stakeholder"
+              signInForceRedirectUrl="/onboarding/stakeholder"
+            >
+              <Button variant="outline" size="lg">
+                Join as a Stakeholder
+                <Users className="ml-2 h-5 w-5" />
+              </Button>
+            </SignUpButton>
+          </div>
 
           {/* Value Props */}
           <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -110,41 +111,32 @@ export default async function HomePage() {
             Join the Hackathon Innovation Engine and be part of the future of medical technology
           </p>
 
-          {userId ? (
-            <Link href="/dashboard">
+          <div className="flex flex-col justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+            <SignUpButton
+              mode="modal"
+              forceRedirectUrl="/onboarding/startup"
+              signInForceRedirectUrl="/onboarding/startup"
+            >
               <Button size="lg" variant="secondary">
-                Go to Dashboard
+                Join as Startup
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-            </Link>
-          ) : (
-            <div className="flex flex-col justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-              <SignUpButton
-                mode="modal"
-                forceRedirectUrl="/onboarding/startup"
-                signInForceRedirectUrl="/onboarding/startup"
+            </SignUpButton>
+            <SignUpButton
+              mode="modal"
+              forceRedirectUrl="/onboarding/stakeholder"
+              signInForceRedirectUrl="/onboarding/stakeholder"
+            >
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white bg-white text-green-600 hover:bg-gray-50"
               >
-                <Button size="lg" variant="secondary">
-                  Join as Startup
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </SignUpButton>
-              <SignUpButton
-                mode="modal"
-                forceRedirectUrl="/onboarding/stakeholder"
-                signInForceRedirectUrl="/onboarding/stakeholder"
-              >
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white bg-white text-green-600 hover:bg-gray-50"
-                >
-                  Join as Stakeholder
-                  <Users className="ml-2 h-5 w-5" />
-                </Button>
-              </SignUpButton>
-            </div>
-          )}
+                Join as Stakeholder
+                <Users className="ml-2 h-5 w-5" />
+              </Button>
+            </SignUpButton>
+          </div>
         </div>
       </section>
 

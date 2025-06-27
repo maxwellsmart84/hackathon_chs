@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Heart, Building2, UserCheck, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
+import { SignInButton, UserButton, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import NotificationBell from './NotificationBell';
