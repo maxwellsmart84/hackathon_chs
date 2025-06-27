@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { users, startups } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { startupOnboardingFormSchema } from '@/lib/db/schema-types';
 import { identifyStartupWithKnock } from '@/lib/services/knock';
+import { markProfileComplete } from '@/lib/services/profile-sync';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,21 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user first to verify they exist and are a startup
-    const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, userId),
+    // Get user from Clerk to get email and other details
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(userId);
+    console.log('Clerk user:', {
+      id: clerkUser.id,
+      email: clerkUser.emailAddresses[0]?.emailAddress,
     });
-    console.log('Found user:', user ? { id: user.id, userType: user.userType } : 'not found');
-
-    if (!user) {
-      console.log('User not found in database');
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    if (user.userType !== 'startup') {
-      console.log('User type is not startup:', user.userType);
-      return NextResponse.json({ error: 'Access denied - not a startup user' }, { status: 403 });
-    }
 
     const body = await request.json();
     console.log('Request body keys:', Object.keys(body));
@@ -43,23 +36,54 @@ export async function POST(request: NextRequest) {
     const validatedData = startupOnboardingFormSchema.parse(body);
     console.log('Validation successful');
 
+    // Check if user already exists in our database
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.clerkId, userId),
+    });
+    console.log('Existing user check:', existingUser ? 'found' : 'not found');
+
+    let user;
+    if (existingUser) {
+      // Update existing user
+      user = existingUser;
+      console.log('Updating existing user');
+      await db
+        .update(users)
+        .set({
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+          userType: 'startup',
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, existingUser.id));
+      console.log('User updated');
+    } else {
+      // Create new user in our database
+      console.log('Creating new user');
+      const newUserId = crypto.randomUUID();
+      await db.insert(users).values({
+        id: newUserId,
+        clerkId: userId,
+        email: clerkUser.emailAddresses[0]?.emailAddress || '',
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        userType: 'startup',
+        profileComplete: false, // Will be set to true by markProfileComplete
+      });
+
+      // Get the created user
+      const createdUsers = await db.query.users.findFirst({
+        where: eq(users.clerkId, userId),
+      });
+      user = createdUsers!;
+      console.log('User created:', { id: user.id });
+    }
+
     // Check if startup profile already exists
     const existingStartup = await db.query.startups.findFirst({
       where: eq(startups.userId, user.id),
     });
     console.log('Existing startup check:', existingStartup ? 'found' : 'not found');
-
-    // Update user's first and last name
-    console.log('Updating user name');
-    await db
-      .update(users)
-      .set({
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
-    console.log('User name updated');
 
     let startupResult;
 
@@ -124,23 +148,16 @@ export async function POST(request: NextRequest) {
       console.log('Startup created:', startupResult);
     }
 
-    // Update user profile completion status
-    console.log('Updating profile completion status');
-    await db
-      .update(users)
-      .set({
-        profileComplete: true,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
-    console.log('Profile completion updated');
+    // Mark profile as complete in both Clerk and database
+    await markProfileComplete(userId, 'startup');
+    console.log('Profile marked as complete');
 
     // Identify user with Knock after successful profile creation using Clerk ID
     await identifyStartupWithKnock(
       userId, // Use Clerk ID for consistency
       validatedData.firstName,
       validatedData.lastName,
-      user.email,
+      clerkUser.emailAddresses[0]?.emailAddress || '',
       validatedData.companyName
     );
 

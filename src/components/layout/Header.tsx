@@ -38,44 +38,49 @@ export default function Header() {
     }
   }, [isSignedIn, isLoaded]);
 
-  // Listen for profile updates to refresh header
+  // Refetch user data when navigating between pages
   useEffect(() => {
-    const handleCustomEvent = () => {
+    if (isSignedIn && isLoaded) {
       fetchUserData();
-    };
-
-    window.addEventListener('user-profile-updated', handleCustomEvent);
-
-    return () => {
-      window.removeEventListener('user-profile-updated', handleCustomEvent);
-    };
-  }, []);
+    }
+  }, [pathname, isSignedIn, isLoaded]);
 
   const fetchUserData = async () => {
     try {
+      console.log('Header: Fetching user data...');
       const userResponse = await fetch('/api/users/me');
       if (userResponse.ok) {
         const userData = await userResponse.json();
+        console.log('Header: User data received:', userData.user);
         setUser(userData.user);
 
         // If startup user with complete profile, get company name
         if (userData.user.profileComplete && userData.user.userType === 'startup') {
+          console.log('Header: Fetching company name for completed startup profile');
           const startupResponse = await fetch('/api/startups');
           if (startupResponse.ok) {
             const startupData = await startupResponse.json();
+            console.log('Header: Company data received:', startupData);
             setCompanyName(startupData.companyName);
           }
         } else {
+          console.log(
+            'Header: Not fetching company name - profileComplete:',
+            userData.user.profileComplete,
+            'userType:',
+            userData.user.userType
+          );
           // Reset company name if not a startup or profile incomplete
           setCompanyName(null);
         }
       } else {
+        console.log('Header: Failed to fetch user data, status:', userResponse.status);
         // User not found or signed out - reset everything
         setUser(null);
         setCompanyName(null);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Header: Error fetching user data:', error);
       // Reset state on error (likely signed out)
       setUser(null);
       setCompanyName(null);
@@ -115,7 +120,7 @@ export default function Header() {
 
       case 'stakeholder':
         return {
-          title: `Welcome back, Dr. ${user.lastName}`,
+          title: `Welcome back, ${user.firstName}  ${user.lastName}`,
           subtitle: 'Hackathon Stakeholder',
           icon: UserCheck,
           iconBg: 'bg-green-600',
@@ -195,9 +200,6 @@ export default function Header() {
                 <SignInButton mode="modal">
                   <Button variant="outline">Sign In</Button>
                 </SignInButton>
-                <SignUpButton mode="modal">
-                  <Button className="bg-green-600 hover:bg-green-700">Get Started</Button>
-                </SignUpButton>
               </>
             )}
           </div>

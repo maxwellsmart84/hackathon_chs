@@ -26,7 +26,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { X, Plus, Building2, Target, Stethoscope, Briefcase, Tags, User } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Building2,
+  Target,
+  Stethoscope,
+  Briefcase,
+  Tags,
+  User,
+  Loader2,
+} from 'lucide-react';
 import { startupOnboardingFormSchema, type StartupOnboardingFormData } from '@/lib/db/schema-types';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -38,7 +48,7 @@ export const FOCUS_AREA_OPTIONS = [
   'Pediatrics',
   'Orthopedics',
   'Vascular',
-  'Suergery',
+  'Surgery',
   'Other',
 ] as const;
 
@@ -589,7 +599,8 @@ export default function StartupOnboardingForm({
 
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Update Profile' : 'Save Profile'}
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? 'Submitting...' : mode === 'edit' ? 'Update Profile' : 'Save Profile'}
             </Button>
           </div>
         </form>

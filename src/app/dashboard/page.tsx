@@ -238,8 +238,6 @@ export default function DashboardPage() {
         await response.json();
         // Update user state to reflect completed profile
         setUser(prev => (prev ? { ...prev, profileComplete: true } : null));
-        // Trigger header refresh
-        window.dispatchEvent(new CustomEvent('user-profile-updated'));
         // Refresh dashboard data
         await fetchDashboardData();
       } else {

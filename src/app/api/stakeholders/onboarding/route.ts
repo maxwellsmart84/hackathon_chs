@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { users, stakeholders } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { identifyStakeholderWithKnock } from '@/lib/services/knock';
+import { markProfileComplete } from '@/lib/services/profile-sync';
 
 // Schema for the onboarding data (includes user fields)
 const StakeholderOnboardingSchema = z.object({
@@ -43,6 +44,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get user from Clerk to get email and other details
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(userId);
+    console.log('Clerk user:', {
+      id: clerkUser.id,
+      email: clerkUser.emailAddresses[0]?.emailAddress,
+    });
+
     const body = await request.json();
     console.log('Received stakeholder onboarding data:', body);
 
@@ -50,7 +59,7 @@ export async function POST(request: Request) {
     const validatedData = StakeholderOnboardingSchema.parse(body);
     console.log('Validated stakeholder onboarding data:', validatedData);
 
-    // Check if user already exists
+    // Check if user already exists in our database
     const existingUser = await db.select().from(users).where(eq(users.clerkId, userId)).limit(1);
 
     let user;
@@ -63,7 +72,6 @@ export async function POST(request: Request) {
           firstName: validatedData.firstName,
           lastName: validatedData.lastName,
           userType: 'stakeholder',
-          profileComplete: true,
           updatedAt: new Date(),
         })
         .where(eq(users.clerkId, userId));
@@ -73,11 +81,11 @@ export async function POST(request: Request) {
       await db.insert(users).values({
         id: newUserId,
         clerkId: userId,
-        email: '', // Will be updated from Clerk webhook or other source
+        email: clerkUser.emailAddresses[0]?.emailAddress || '',
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         userType: 'stakeholder',
-        profileComplete: true,
+        profileComplete: false, // Will be set to true by markProfileComplete
       });
 
       // Get the created user
@@ -124,12 +132,16 @@ export async function POST(request: Request) {
       });
     }
 
+    // Mark profile as complete in both Clerk and database
+    await markProfileComplete(userId, 'stakeholder');
+    console.log('Profile marked as complete');
+
     // Identify user with Knock after successful profile creation using Clerk ID
     await identifyStakeholderWithKnock(
       userId, // Use Clerk ID for consistency
       validatedData.firstName,
       validatedData.lastName,
-      user.email,
+      clerkUser.emailAddresses[0]?.emailAddress || '',
       validatedData.organizationName
     );
 

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { syncUserProfileStatus } from '@/lib/services/profile-sync';
 
 export async function GET() {
   try {
@@ -12,35 +13,46 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
+    // Get user profile from database
     let user = await db.query.users.findFirst({
       where: eq(users.clerkId, userId),
     });
 
-    // If user does not exist, create them from Clerk (only for startup users)
-    // Stakeholders should be created through the explicit /api/users endpoint
+    // If user doesn't exist, create them from Clerk data
     if (!user) {
-      const clerkUser = await currentUser();
-      if (!clerkUser) {
-        return NextResponse.json({ error: 'Clerk user not found' }, { status: 404 });
-      }
+      const clerk = await clerkClient();
+      const clerkUser = await clerk.users.getUser(userId);
 
-      // Only auto-create for startup users, return 404 for others to force explicit creation
+      // Sync to get the correct status from Clerk metadata
+      const syncResult = await syncUserProfileStatus(userId);
+
+      // Create new user with synced data
       const newUser = {
         id: crypto.randomUUID(),
         clerkId: userId,
         email: clerkUser.emailAddresses[0]?.emailAddress || '',
         firstName: clerkUser.firstName || '',
         lastName: clerkUser.lastName || '',
-        userType: 'startup', // Default to startup for auto-creation
-        profileComplete: false,
+        userType: syncResult.userType,
+        profileComplete: syncResult.profileComplete,
       };
 
       await db.insert(users).values(newUser);
+
       // Fetch the user again to get all fields (createdAt, updatedAt, etc.)
       user = await db.query.users.findFirst({
         where: eq(users.clerkId, userId),
       });
+    } else {
+      // User exists - sync with Clerk metadata
+      const syncResult = await syncUserProfileStatus(userId);
+
+      if (syncResult.wasUpdated) {
+        // Fetch updated user data
+        user = await db.query.users.findFirst({
+          where: eq(users.clerkId, userId),
+        });
+      }
     }
 
     if (!user) {

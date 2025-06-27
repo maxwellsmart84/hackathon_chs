@@ -25,7 +25,11 @@ export default async function HomePage() {
 
           {!userId && (
             <div className="mb-12 flex justify-center">
-              <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding/startup">
+              <SignUpButton
+                mode="modal"
+                forceRedirectUrl="/onboarding/startup"
+                signInForceRedirectUrl="/onboarding/startup"
+              >
                 <Button size="lg" className="bg-green-600 hover:bg-green-700">
                   Get Started as a Startup
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -37,7 +41,11 @@ export default async function HomePage() {
           {!userId && (
             <div className="mb-12 text-center">
               <p className="mb-4 text-gray-600">Are you a CRO, investor, or consultant?</p>
-              <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding/stakeholder">
+              <SignUpButton
+                mode="modal"
+                forceRedirectUrl="/onboarding/stakeholder"
+                signInForceRedirectUrl="/onboarding/stakeholder"
+              >
                 <Button variant="outline" size="lg">
                   Join as a Stakeholder
                   <Users className="ml-2 h-5 w-5" />
@@ -110,12 +118,32 @@ export default async function HomePage() {
               </Button>
             </Link>
           ) : (
-            <SignUpButton mode="modal">
-              <Button size="lg" variant="secondary">
-                Get Started Today
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </SignUpButton>
+            <div className="flex flex-col justify-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+              <SignUpButton
+                mode="modal"
+                forceRedirectUrl="/onboarding/startup"
+                signInForceRedirectUrl="/onboarding/startup"
+              >
+                <Button size="lg" variant="secondary">
+                  Join as Startup
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </SignUpButton>
+              <SignUpButton
+                mode="modal"
+                forceRedirectUrl="/onboarding/stakeholder"
+                signInForceRedirectUrl="/onboarding/stakeholder"
+              >
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white bg-white text-green-600 hover:bg-gray-50"
+                >
+                  Join as Stakeholder
+                  <Users className="ml-2 h-5 w-5" />
+                </Button>
+              </SignUpButton>
+            </div>
           )}
         </div>
       </section>

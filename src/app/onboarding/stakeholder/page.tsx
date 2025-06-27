@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
@@ -17,45 +17,33 @@ export default function StakeholderOnboardingPage() {
     userId: string;
   } | null>(null);
 
-  const fetchUserData = useCallback(async () => {
-    try {
-      // Try to fetch user data from our database first
-      const response = await fetch('/api/users/me');
-      if (response.ok) {
-        const dbUser = await response.json();
-        setUserData({
-          firstName: dbUser.user?.firstName || user?.firstName || '',
-          lastName: dbUser.user?.lastName || user?.lastName || '',
-          userId: dbUser.user?.id,
-        });
-      } else {
-        // Fallback to Clerk data if user not in database yet
-        setUserData({
-          firstName: user?.firstName || '',
-          lastName: user?.lastName || '',
-          userId: user?.id || '',
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      // Fallback to Clerk data
-      if (user) {
-        setUserData({
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          userId: user.id,
-        });
-      }
-    }
-  }, [user]);
-
-  // Fetch user data when Clerk user is loaded
+  // Check if user has already completed onboarding
   useEffect(() => {
     if (isLoaded && user) {
-      // First try to get from the database, fallback to Clerk data
-      fetchUserData();
+      // Check if user has already completed onboarding
+      const metadata = user.publicMetadata as { userType?: string; onboardingComplete?: boolean };
+
+      if (metadata.onboardingComplete && metadata.userType === 'stakeholder') {
+        // User has already completed stakeholder onboarding, redirect to dashboard
+        router.push('/dashboard/stakeholder');
+        return;
+      }
+
+      // If user has completed onboarding for a different type, show error
+      if (metadata.onboardingComplete && metadata.userType !== 'stakeholder') {
+        toast.error('You have already completed onboarding as a ' + metadata.userType);
+        router.push('/dashboard');
+        return;
+      }
+
+      // Set user data for form
+      setUserData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        userId: user.id,
+      });
     }
-  }, [isLoaded, user, fetchUserData]);
+  }, [isLoaded, user, router]);
 
   const handleSubmit = async (data: StakeholderOnboardingFormData) => {
     setIsSubmitting(true);
@@ -92,6 +80,10 @@ export default function StakeholderOnboardingPage() {
       console.log('Success response:', result);
 
       toast.success(result.message || 'Stakeholder profile saved successfully!');
+
+      // Force refresh user to get updated metadata
+      await user?.reload();
+
       router.push('/dashboard/stakeholder');
     } catch (error) {
       console.error('Onboarding submission failed:', error);
