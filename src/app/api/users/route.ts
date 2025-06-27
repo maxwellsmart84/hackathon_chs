@@ -83,11 +83,31 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { profileComplete } = body;
 
+    // Get current user to check existing profileComplete status
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.clerkId, userId),
+    });
+
+    if (!existingUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // CRITICAL: Never allow profileComplete to be set from true to false
+    // Once a profile is complete, it should stay complete (silently ignore downgrades)
+    const finalProfileComplete = existingUser.profileComplete === true ? true : profileComplete;
+
+    // Log if we're protecting against profileComplete downgrade
+    if (existingUser.profileComplete === true && profileComplete === false) {
+      console.log(
+        `Silently ignored attempt to set profileComplete from true to false for user ${userId}`
+      );
+    }
+
     // Update user profile completion status
     await db
       .update(users)
       .set({
-        profileComplete,
+        profileComplete: finalProfileComplete,
         updatedAt: new Date(),
       })
       .where(eq(users.clerkId, userId));

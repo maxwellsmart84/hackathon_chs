@@ -41,33 +41,44 @@ export async function syncUserProfileStatus(clerkUserId: string): Promise<{
     const dbComplete = user.profileComplete;
     const dbUserType = user.userType;
 
+    // CRITICAL: Never allow profileComplete to be synced from true to false
+    // Once a profile is complete, it should stay complete
+    const finalProfileComplete = dbComplete === true ? true : clerkComplete;
+
     // Check if sync is needed
-    const needsSync = clerkComplete !== dbComplete || clerkUserType !== dbUserType;
+    const needsSync = finalProfileComplete !== dbComplete || clerkUserType !== dbUserType;
 
     if (needsSync) {
       console.log(`Syncing profile status for user ${clerkUserId}:`);
-      console.log(`  profileComplete: DB=${dbComplete} -> Clerk=${clerkComplete}`);
+      console.log(`  profileComplete: DB=${dbComplete} -> Final=${finalProfileComplete}`);
       console.log(`  userType: DB=${dbUserType} -> Clerk=${clerkUserType}`);
 
-      // Update database to match Clerk metadata
+      // Log if we're protecting against profileComplete downgrade
+      if (dbComplete === true && clerkComplete === false) {
+        console.log(
+          `Silently ignored Clerk sync attempt to downgrade profileComplete for user ${clerkUserId}`
+        );
+      }
+
+      // Update database to match Clerk metadata (with protection)
       await db
         .update(users)
         .set({
-          profileComplete: clerkComplete,
+          profileComplete: finalProfileComplete,
           userType: clerkUserType,
           updatedAt: new Date(),
         })
         .where(eq(users.clerkId, clerkUserId));
 
       return {
-        profileComplete: clerkComplete,
+        profileComplete: finalProfileComplete,
         userType: clerkUserType,
         wasUpdated: true,
       };
     }
 
     return {
-      profileComplete: clerkComplete,
+      profileComplete: finalProfileComplete,
       userType: clerkUserType,
       wasUpdated: false,
     };
