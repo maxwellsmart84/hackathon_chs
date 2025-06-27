@@ -1,11 +1,11 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, stakeholders, startups } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 /**
  * Ensures a user's profileComplete status is synced between Clerk metadata and our database.
- * Clerk metadata is treated as the source of truth.
+ * If actual startup/stakeholder profiles exist, they take precedence over Clerk metadata.
  */
 export async function syncUserProfileStatus(clerkUserId: string): Promise<{
   profileComplete: boolean;
@@ -38,48 +38,68 @@ export async function syncUserProfileStatus(clerkUserId: string): Promise<{
       };
     }
 
-    const dbComplete = user.profileComplete;
-    const dbUserType = user.userType;
+    // Check for actual profile records - these are the source of truth
+    const stakeholderProfile = await db.query.stakeholders.findFirst({
+      where: eq(stakeholders.userId, user.id),
+    });
 
-    // CRITICAL: Never allow profileComplete to be synced from true to false
-    // Once a profile is complete, it should stay complete
-    const finalProfileComplete = dbComplete === true ? true : clerkComplete;
+    const startupProfile = await db.query.startups.findFirst({
+      where: eq(startups.userId, user.id),
+    });
+
+    // Determine actual status based on profile existence
+    let actualUserType: 'startup' | 'stakeholder' | 'admin';
+    let actualProfileComplete: boolean;
+
+    if (stakeholderProfile) {
+      // Has stakeholder profile = definitely completed stakeholder onboarding
+      actualUserType = 'stakeholder';
+      actualProfileComplete = true;
+    } else if (startupProfile) {
+      // Has startup profile = definitely completed startup onboarding
+      actualUserType = 'startup';
+      actualProfileComplete = true;
+    } else {
+      // No profile records = use Clerk metadata (for new/incomplete users)
+      actualUserType = clerkUserType;
+      actualProfileComplete = clerkComplete;
+    }
+
+    const dbComplete = user.profileComplete;
+    const dbUserType = user.userType as 'startup' | 'stakeholder' | 'admin';
 
     // Check if sync is needed
-    const needsSync = finalProfileComplete !== dbComplete || clerkUserType !== dbUserType;
+    const needsSync = actualProfileComplete !== dbComplete || actualUserType !== dbUserType;
 
     if (needsSync) {
       console.log(`Syncing profile status for user ${clerkUserId}:`);
-      console.log(`  profileComplete: DB=${dbComplete} -> Final=${finalProfileComplete}`);
-      console.log(`  userType: DB=${dbUserType} -> Clerk=${clerkUserType}`);
+      console.log(`  profileComplete: DB=${dbComplete} -> Actual=${actualProfileComplete}`);
+      console.log(`  userType: DB=${dbUserType} -> Actual=${actualUserType}`);
 
-      // Log if we're protecting against profileComplete downgrade
-      if (dbComplete === true && clerkComplete === false) {
-        console.log(
-          `Silently ignored Clerk sync attempt to downgrade profileComplete for user ${clerkUserId}`
-        );
+      if (stakeholderProfile || startupProfile) {
+        console.log(`Using actual profile records as source of truth (ignoring Clerk metadata)`);
       }
 
-      // Update database to match Clerk metadata (with protection)
+      // Update database to match actual status
       await db
         .update(users)
         .set({
-          profileComplete: finalProfileComplete,
-          userType: clerkUserType,
+          profileComplete: actualProfileComplete,
+          userType: actualUserType,
           updatedAt: new Date(),
         })
         .where(eq(users.clerkId, clerkUserId));
 
       return {
-        profileComplete: finalProfileComplete,
-        userType: clerkUserType,
+        profileComplete: actualProfileComplete,
+        userType: actualUserType,
         wasUpdated: true,
       };
     }
 
     return {
-      profileComplete: finalProfileComplete,
-      userType: clerkUserType,
+      profileComplete: actualProfileComplete,
+      userType: actualUserType,
       wasUpdated: false,
     };
   } catch (error) {
