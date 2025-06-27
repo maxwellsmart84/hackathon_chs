@@ -394,44 +394,42 @@ export default function DashboardPage() {
       </div>
 
       {/* Service Type Filters */}
-      {connections.length === 0 && stakeholders.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Filter Stakeholders by Services Needed</CardTitle>
-              {selectedServiceFilters.length > 0 && (
-                <Button size="sm" variant="outline" onClick={clearAllFilters}>
-                  Clear All
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {SERVICE_FILTER_OPTIONS.map(service => (
-                <Badge
-                  key={service.value}
-                  variant={selectedServiceFilters.includes(service.value) ? 'default' : 'outline'}
-                  className="hover:bg-opacity-80 cursor-pointer px-3 py-1 text-sm"
-                  onClick={() => toggleServiceFilter(service.value)}
-                >
-                  {service.label}
-                </Badge>
-              ))}
-            </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Filter Stakeholders by Services Needed</CardTitle>
             {selectedServiceFilters.length > 0 && (
-              <div className="mt-3 text-sm text-gray-600">
-                Showing stakeholders offering:{' '}
-                {selectedServiceFilters
-                  .map(
-                    filter => SERVICE_FILTER_OPTIONS.find(option => option.value === filter)?.label
-                  )
-                  .join(', ')}
-              </div>
+              <Button size="sm" variant="outline" onClick={clearAllFilters}>
+                Clear All
+              </Button>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {SERVICE_FILTER_OPTIONS.map(service => (
+              <Badge
+                key={service.value}
+                variant={selectedServiceFilters.includes(service.value) ? 'default' : 'outline'}
+                className="hover:bg-opacity-80 cursor-pointer px-3 py-1 text-sm"
+                onClick={() => toggleServiceFilter(service.value)}
+              >
+                {service.label}
+              </Badge>
+            ))}
+          </div>
+          {selectedServiceFilters.length > 0 && (
+            <div className="mt-3 text-sm text-gray-600">
+              Showing stakeholders offering:{' '}
+              {selectedServiceFilters
+                .map(
+                  filter => SERVICE_FILTER_OPTIONS.find(option => option.value === filter)?.label
+                )
+                .join(', ')}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Active Connections Details */}
